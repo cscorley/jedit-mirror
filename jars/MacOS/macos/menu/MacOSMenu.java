@@ -29,75 +29,89 @@ import java.io.File;
 import javax.swing.*;
 import javax.swing.event.*;
 import org.gjt.sp.jedit.*;
-import org.gjt.sp.jedit.menu.*;
 import org.gjt.sp.util.Log;
 import macos.*;
 //}}}
 
-public class MacOSMenu implements DynamicMenuProvider
-{	
+public class MacOSMenu extends JMenu implements ActionListener, MenuListener
+{
+	private MacMenuItem showCurrent;
+	private MacMenuItem showCurrentDir;
+	
 	//{{{ Constructor
 	public MacOSMenu()
 	{
-		//super();
+		super(jEdit.getProperty("MacOSPlugin.menu.label"));
+		
+		showCurrent = new MacMenuItem(
+			jEdit.getProperty("MacOSPlugin.menu.showCurrent"));
+		showCurrent.addActionListener(this);
+		showCurrentDir = new MacMenuItem(
+			jEdit.getProperty("MacOSPlugin.menu.showCurrentDir"));
+		showCurrentDir.addActionListener(this);
+		add(showCurrent);
+		add(showCurrentDir);
+		addSeparator();
+		add(new ShowBufferMenu());
+		add(new ShowRecentMenu());
+		add(new ShowRecentDirMenu());
+		
+		addMenuListener(this);
 	} //}}}
 	
-	//{{{ updateEveryTime() method
-	public boolean updateEveryTime()
-	{
-		return true;
-	} //}}}
-	
-	//{{{ update() method
-	public void update(JMenu menu)
+	//{{{ construct() method
+	private void construct()
 	{
 		File buff = new File(jEdit.getActiveView().getBuffer().getPath());
-		
-		JMenuItem showCurrent = new JMenuItem(
-			jEdit.getProperty("MacOSPlugin.menu.showCurrent"));
-		showCurrent.addActionListener(new ShowFileAction(buff.getPath()));
+		showCurrent.setPath(buff.getPath());
 		showCurrent.setEnabled(buff.exists());
-		JMenuItem showCurrentDir = new JMenuItem(
-			jEdit.getProperty("MacOSPlugin.menu.showCurrentDir"));
-		showCurrentDir.addActionListener(new ShowDirAction(buff.getParent()));
-		showCurrent.setEnabled(buff.getParentFile().exists());
-		menu.add(showCurrent);
-		menu.add(showCurrentDir);
-		menu.addSeparator();
-		menu.add(new ShowBufferMenu());
-		menu.add(new ShowRecentMenu());
-		menu.add(new ShowRecentDirMenu());
+		showCurrentDir.setPath(buff.getParent());
 	} //}}}
 	
-	//{{{ ShowFileAction class
-	class ShowFileAction implements ActionListener
+	//{{{ menuSelected() method
+	public void menuSelected(MenuEvent e)
 	{
-		private String path;
-		
-		public ShowFileAction(String path)
-		{
-			this.path = path;
-		}
-		
-		public void actionPerformed(ActionEvent e)
-		{
-			MacOSActions.showInFinder(path);
-		}
+		construct();
 	} //}}}
 	
-	//{{{ ShowDirAction class
-	class ShowDirAction implements ActionListener
+	//{{{ menuDeselected() method
+	public void menuDeselected(MenuEvent e)
 	{
-		private String path;
+	} //}}}
+	
+	//{{{ menuCanceled() method
+	public void menuCanceled(MenuEvent e)
+	{
+	} //}}}
+	
+	//{{{ actionPerformed() method
+	public void actionPerformed(ActionEvent e)
+	{
+		Object src = e.getSource();
+		if (src == showCurrent)
+			MacOSActions.showInFinder(showCurrent.getPath());
+		else if (src == showCurrentDir)
+			MacOSActions.showInFinder(showCurrentDir.getPath());
+	} //}}}
+	
+	//{{{ MacMenuItem class
+	class MacMenuItem extends JMenuItem
+	{
+		String path;
 		
-		public ShowDirAction(String path)
+		public MacMenuItem(String name)
 		{
-			this.path = path;
+			super(name);
 		}
 		
-		public void actionPerformed(ActionEvent e)
+		public String getPath()
 		{
-			MacOSActions.showInFinder(path);
+			return path;
+		}
+		
+		public void setPath(String path)
+		{
+			this.path = path;
 		}
 	} //}}}
 }

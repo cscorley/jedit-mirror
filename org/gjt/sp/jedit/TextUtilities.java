@@ -1,6 +1,8 @@
 /*
  * TextUtilities.java - Various text functions
- * Copyright (C) 1998, 1999, 2000 Slava Pestov
+ * Copyright (C) 1998, 1999, 2000, 2001 Slava Pestov
+ * :tabSize=8:indentSize=8:noTabs=false:
+ * :folding=explicit:collapseFolds=1:
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,6 +31,7 @@ import org.gjt.sp.jedit.syntax.*;
  */
 public class TextUtilities
 {
+	//{{{ findMatchingBracket() method
 	/**
 	 * Returns the offset of the bracket matching the one at the
 	 * specified offset of the buffer, or -1 if the bracket is
@@ -36,17 +39,15 @@ public class TextUtilities
 	 * @param buffer The buffer
 	 * @param line The line
 	 * @param offset The offset within that line
-	 * @exception BadLocationException If an out-of-bounds access
-	 * was attempted on the buffer's text
 	 * @since jEdit 2.6pre1
 	 */
 	public static int findMatchingBracket(Buffer buffer, int line, int offset)
-		throws BadLocationException
 	{
 		return findMatchingBracket(buffer,line,offset,0,
-			buffer.getDefaultRootElement().getElementCount());
-	}
+			buffer.getDefaultRootElement().getElementCount() - 1);
+	} //}}}
 
+	//{{{ findMatchingBracket() method
 	/**
 	 * Returns the offset of the bracket matching the one at the
 	 * specified offset of the buffer, or -1 if the bracket is
@@ -60,12 +61,10 @@ public class TextUtilities
 	 * @param endLine The last line to scan. This is used to speed up
 	 * on-screen bracket matching because only visible lines need to be
 	 * scanned
-	 * @exception BadLocationException If an out-of-bounds access
-	 * was attempted on the buffer's text
 	 * @since jEdit 2.7pre3
 	 */
 	public static int findMatchingBracket(Buffer buffer, int line, int offset,
-		int startLine, int endLine) throws BadLocationException
+		int startLine, int endLine)
 	{
 		if(buffer.getLength() == 0)
 			return -1;
@@ -99,8 +98,8 @@ public class TextUtilities
 		// the corresponding bracket
 		byte idOfBracket = Token.NULL;
 
-		Buffer.LineInfo lineInfo = buffer.markTokens(line);
-		Token lineTokens = lineInfo.getFirstToken();
+		Buffer.TokenList tokenList = buffer.markTokens(line);
+		Token lineTokens = tokenList.getFirstToken();
 
 		int tokenListOffset = 0;
 		for(;;)
@@ -120,10 +119,9 @@ public class TextUtilities
 			}
 		}
 
+		//{{{ scan backwards
 		if(direction)
 		{
-			// scan backwards
-
 			count = 0;
 
 			for(int i = line; i >= startLine; i--)
@@ -146,18 +144,8 @@ public class TextUtilities
 				{
  					if(tokenListOffset != lineLength)
  						tokenListOffset += lineTokens.length;
-					//lineTokens = lineInfo.lastToken;
 					scanStartOffset = offset;
-					/*System.err.println("sso=" + scanStartOffset + ",tlo=" + tokenListOffset);
-
-					Token __ = lineTokens;
-					 for(;;)
-					{
-						if(__ == null)
-							break;
-						System.err.println(__);
-						__ = __.prev;
-					} */
+					//System.err.println("sso=" + scanStartOffset + ",tlo=" + tokenListOffset);
 				}
 
 				// only check tokens with id 'idOfBracket'
@@ -170,10 +158,10 @@ public class TextUtilities
 						continue;
 					}
 
-					//System.err.println(lineTokens);
 					int len = lineTokens.length;
 					if(id == idOfBracket)
 					{
+						StringBuffer sb = new StringBuffer();
 						for(int j = scanStartOffset; j >= Math.max(0,tokenListOffset - len); j--)
 						{
 							if(j >= lineText.count)
@@ -185,7 +173,7 @@ public class TextUtilities
 							}
 
 							char ch = lineText.array[lineText.offset + j];
-							//System.err.print(ch);
+							sb.append(ch);
 							if(ch == c)
 								count++;
 							else if(ch == cprime)
@@ -194,21 +182,20 @@ public class TextUtilities
 									return lineStart + j;
 							}
 						}
-						//System.err.println();
+						//System.err.println("[" + sb.reverse() + "]");
 					}
 
 					scanStartOffset = tokenListOffset = tokenListOffset - len;
 					lineTokens = lineTokens.prev;
 				}
 			}
-		}
+		} //}}}
+		//{{{ scan forwards
 		else
 		{
-			// scan forwards
-
 			count = 0;
 
-			for(int i = line; i < endLine; i++)
+			for(int i = line; i <= endLine; i++)
 			{
 				// get text
 				lineElement = map.getElement(i);
@@ -253,12 +240,13 @@ public class TextUtilities
 					lineTokens = lineTokens.next;
 				}
 			}
-		}
+		} //}}}
 
 		// Nothing found
 		return -1;
-	}
+	} //}}}
 
+	//{{{ findWordStart() method
 	/**
 	 * Locates the start of the word at the specified position.
 	 * @param line The text
@@ -288,8 +276,9 @@ public class TextUtilities
 		}
 
 		return wordStart;
-	}
+	} //}}}
 
+	//{{{ findWordEnd() method
 	/**
 	 * Locates the end of the word at the specified position.
 	 * @param line The text
@@ -321,8 +310,9 @@ public class TextUtilities
 			}
 		}
 		return wordEnd;
-	}
+	} //}}}
 
+	//{{{ regionMatches() method
 	/**
 	 * Checks if a subregion of a <code>Segment</code> is equal to a
 	 * character array.
@@ -352,8 +342,9 @@ public class TextUtilities
 				return false;
 		}
 		return true;
-	}
+	} //}}}
 
+	//{{{ spacesToTabs() method
 	/**
 	 * Converts consecutive spaces to tabs in the specified string.
 	 * @param in The string
@@ -406,8 +397,9 @@ public class TextUtilities
 		}
 
                 return buf.toString();
-	}
+	} //}}}
 
+	//{{{ tabsToSpaces() method
 	/**
 	 * Converts tabs to consecutive spaces in the specified string.
 	 * @param in The string
@@ -438,8 +430,9 @@ public class TextUtilities
                         }
                 }
                 return buf.toString();
-	}
+	} //}}}
 
+	//{{{ format() method
 	/**
 	 * Formats the specified text by merging and breaking lines to the
 	 * specified width.
@@ -523,64 +516,79 @@ public class TextUtilities
 			buf.append(' ');
 		buf.append(word);
 		return buf.toString();
-	}
-}
+	} //}}}
 
-/*
- * ChangeLog:
- * $Log$
- * Revision 1.1  2001/09/02 05:37:31  spestov
- * Initial revision
- *
- * Revision 1.7  2001/01/25 02:03:37  sp
- * Started folding, messed up some code, added a few bugs
- *
- * Revision 1.6  2000/11/23 08:34:10  sp
- * Search and replace UI improvements
- *
- * Revision 1.5  2000/11/13 11:19:26  sp
- * Search bar reintroduced, more BeanShell stuff
- *
- * Revision 1.4  2000/11/07 10:08:31  sp
- * Options dialog improvements, documentation changes, bug fixes
- *
- * Revision 1.13  2000/09/06 04:39:47  sp
- * bug fixes
- *
- * Revision 1.12  2000/09/04 06:34:54  sp
- * bug fixes
- *
- * Revision 1.11  2000/09/03 03:16:53  sp
- * Search bar integrated with command line, enhancements throughout
- *
- * Revision 1.10  2000/07/26 07:48:45  sp
- * stuff
- *
- * Revision 1.9  2000/07/22 03:27:04  sp
- * threaded I/O improved, autosave rewrite started
- *
- * Revision 1.8  2000/07/15 06:56:29  sp
- * bracket matching debugged
- *
- * Revision 1.7  2000/07/14 06:00:45  sp
- * bracket matching now takes syntax info into account
- *
- * Revision 1.6  2000/01/28 00:20:58  sp
- * Lots of stuff
- *
- * Revision 1.5  1999/12/19 11:14:29  sp
- * Static abbrev expansion started
- *
- * Revision 1.4  1999/12/13 03:40:30  sp
- * Bug fixes, syntax is now mostly GPL'd
- *
- * Revision 1.3  1999/11/21 03:40:18  sp
- * Parts of EditBus not used by core moved to EditBus.jar
- *
- * Revision 1.2  1999/07/16 23:45:49  sp
- * 1.7pre6 BugFree version
- *
- * Revision 1.1  1999/06/29 09:03:18  sp
- * oops, forgot to add TextUtilities.java
- *
- */
+	//{{{ getStringCase() method
+	public static final int MIXED = 0;
+	public static final int LOWER_CASE = 1;
+	public static final int UPPER_CASE = 2;
+	public static final int TITLE_CASE = 3;
+
+	/**
+	 * Returns if the specified string is all upper case, all lower case,
+	 * or title case (first letter upper case, rest lower case).
+	 * @param str The string
+	 * @since jEdit 4.0pre1
+	 */
+	public static int getStringCase(String str)
+	{
+		if(str.length() == 0)
+			return MIXED;
+
+		int state = -1;
+
+		char ch = str.charAt(0);
+		if(Character.isLetter(ch))
+		{
+			if(Character.isUpperCase(ch))
+				state = UPPER_CASE;
+			else
+				state = LOWER_CASE;
+		}
+
+		for(int i = 1; i < str.length(); i++)
+		{
+			ch = str.charAt(i);
+			if(!Character.isLetter(ch))
+				continue;
+
+			switch(state)
+			{
+			case UPPER_CASE:
+				if(Character.isLowerCase(ch))
+				{
+					if(i == 1)
+						state = TITLE_CASE;
+					else
+						return MIXED;
+				}
+				break;
+			case LOWER_CASE:
+			case TITLE_CASE:
+				if(Character.isUpperCase(ch))
+					return MIXED;
+				break;
+			}
+		}
+
+		return state;
+	} //}}}
+
+	//{{{ toTitleCase() method
+	/**
+	 * Converts the specified string to title case, by capitalizing the
+	 * first letter.
+	 * @param str The string
+	 * @since jEdit 4.0pre1
+	 */
+	public static String toTitleCase(String str)
+	{
+		if(str.length() == 0)
+			return str;
+		else
+		{
+			return Character.toUpperCase(str.charAt(0))
+				+ str.substring(1).toLowerCase();
+		}
+	} //}}}
+}

@@ -156,13 +156,13 @@ public class WorkThread extends Thread
 			else
 			{
 				requestRunning = true;
-				pool.fireProgressChanged(this);
+				pool.fireStatusChanged(this);
 				doRequest(request);
 				requestRunning = false;
-				pool.fireProgressChanged(this);
 			}
 		}
 
+		pool.fireStatusChanged(this);
 
 		synchronized(pool.waitForAllLock)
 		{
@@ -211,7 +211,7 @@ public class WorkThread extends Thread
 			status = null;
 			progressValue = progressMaximum = 0;
 			pool.requestDone();
-			pool.fireProgressChanged(this);
+			pool.fireStatusChanged(this);
 		}
 	}
 

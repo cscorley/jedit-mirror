@@ -21,7 +21,6 @@ package org.gjt.sp.jedit.search;
 
 import javax.swing.border.*;
 import javax.swing.event.*;
-import javax.swing.text.BadLocationException;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -81,15 +80,19 @@ public class SearchDialog extends EnhancedDialog
 
 		content.add(BorderLayout.EAST,createButtonsPanel());
 
-		if(searchString != null && searchString.indexOf('\n') == -1)
+		if(searchString != null)
 		{
-			find.setText(searchString);
-			find.selectAll();
+			if(searchString.indexOf('\n') == -1)
+			{
+				find.setText(searchString);
+				find.selectAll();
+			}
+			else if(searchIn == CURRENT_BUFFER)
+			{
+				searchSelection.setSelected(true);
+				hyperSearch.setSelected(true);
+			}
 		}
-		else
-			// ???
-
-		replace.setText(null);
 
 		ignoreCase.setSelected(SearchAndReplace.getIgnoreCase());
 		regexp.setSelected(SearchAndReplace.getRegexp());
@@ -106,11 +109,29 @@ public class SearchDialog extends EnhancedDialog
 			stringReplace.setSelected(true);
 
 		if(searchIn == CURRENT_BUFFER)
-			searchCurrentBuffer.setSelected(true);
+		{
+			if(!searchSelection.isSelected())
+			{
+				// might be already selected, see above.
+				searchCurrentBuffer.setSelected(true);
+
+				/* this property is only loaded and saved if
+				 * the 'current buffer' file set is selected.
+				 * otherwise, it defaults to on. */
+				hyperSearch.setSelected(jEdit.getBooleanProperty(
+					"search.hypersearch.toggle"));
+			}
+		}
 		else if(searchIn == ALL_BUFFERS)
+		{
 			searchAllBuffers.setSelected(true);
+			hyperSearch.setSelected(true);
+		}
 		else if(searchIn == DIRECTORY)
+		{
+			hyperSearch.setSelected(true);
 			searchDirectory.setSelected(true);
+		}
 
 		SearchFileSet fileset = SearchAndReplace.getSearchFileSet();
 
@@ -153,9 +174,6 @@ public class SearchDialog extends EnhancedDialog
 		keepDialog.setSelected(jEdit.getBooleanProperty(
 			"search.keepDialog.toggle"));
 
-		hyperSearch.setSelected(jEdit.getBooleanProperty(
-			"search.hypersearch.toggle"));
-
 		updateEnabled();
 
 		pack();
@@ -178,9 +196,10 @@ public class SearchDialog extends EnhancedDialog
 			if(!save())
 				return;
 
-			if(hyperSearch.isSelected())
+			if(hyperSearch.isSelected() || searchSelection.isSelected())
 			{
-				if(SearchAndReplace.hyperSearch(view));
+				if(SearchAndReplace.hyperSearch(view,
+					searchSelection.isSelected()));
 					closeOrKeepDialog();
 			}
 			else
@@ -214,7 +233,7 @@ public class SearchDialog extends EnhancedDialog
 	private JCheckBox keepDialog, ignoreCase, regexp, hyperSearch,
 		wrap;
 	private JRadioButton searchBack, searchForward;
-	private JRadioButton searchCurrentBuffer, searchAllBuffers,
+	private JRadioButton searchSelection, searchCurrentBuffer, searchAllBuffers,
 		searchDirectory;
 
 	// multifile settings
@@ -293,17 +312,32 @@ public class SearchDialog extends EnhancedDialog
 
 		SettingsActionHandler actionHandler = new SettingsActionHandler();
 		ButtonGroup fileset = new ButtonGroup();
+		ButtonGroup direction = new ButtonGroup();
 
 		searchSettings.add(new JLabel(jEdit.getProperty("search.fileset")));
+
+		searchSettings.add(new JLabel(jEdit.getProperty("search.settings")));
+
+		searchSettings.add(new JLabel(jEdit.getProperty("search.direction")));
+
+		searchSelection = new JRadioButton(jEdit.getProperty("search.selection"));
+		searchSelection.setMnemonic(jEdit.getProperty("search.selection.mnemonic")
+			.charAt(0));
+		fileset.add(searchSelection);
+		searchSettings.add(searchSelection);
+		searchSelection.addActionListener(actionHandler);
 
 		keepDialog = new JCheckBox(jEdit.getProperty("search.keep"));
 		keepDialog.setMnemonic(jEdit.getProperty("search.keep.mnemonic")
 			.charAt(0));
 		searchSettings.add(keepDialog);
 
-		searchSettings.add(new JLabel(jEdit.getProperty("search.direction")));
-
-		ButtonGroup direction = new ButtonGroup();
+		searchBack = new JRadioButton(jEdit.getProperty("search.back"));
+		searchBack.setMnemonic(jEdit.getProperty("search.back.mnemonic")
+			.charAt(0));
+		direction.add(searchBack);
+		searchSettings.add(searchBack);
+		searchBack.addActionListener(actionHandler);
 
 		searchCurrentBuffer = new JRadioButton(jEdit.getProperty("search.current"));
 		searchCurrentBuffer.setMnemonic(jEdit.getProperty("search.current.mnemonic")
@@ -318,12 +352,12 @@ public class SearchDialog extends EnhancedDialog
 		searchSettings.add(ignoreCase);
 		ignoreCase.addActionListener(actionHandler);
 
-		searchBack = new JRadioButton(jEdit.getProperty("search.back"));
-		searchBack.setMnemonic(jEdit.getProperty("search.back.mnemonic")
+		searchForward = new JRadioButton(jEdit.getProperty("search.forward"));
+		searchForward.setMnemonic(jEdit.getProperty("search.forward.mnemonic")
 			.charAt(0));
-		direction.add(searchBack);
-		searchSettings.add(searchBack);
-		searchBack.addActionListener(actionHandler);
+		direction.add(searchForward);
+		searchSettings.add(searchForward);
+		searchForward.addActionListener(actionHandler);
 
 		searchAllBuffers = new JRadioButton(jEdit.getProperty("search.all"));
 		searchAllBuffers.setMnemonic(jEdit.getProperty("search.all.mnemonic")
@@ -338,12 +372,11 @@ public class SearchDialog extends EnhancedDialog
 		searchSettings.add(regexp);
 		regexp.addActionListener(actionHandler);
 
-		searchForward = new JRadioButton(jEdit.getProperty("search.forward"));
-		searchForward.setMnemonic(jEdit.getProperty("search.forward.mnemonic")
+		wrap = new JCheckBox(jEdit.getProperty("search.wrap"));
+		wrap.setMnemonic(jEdit.getProperty("search.wrap.mnemonic")
 			.charAt(0));
-		direction.add(searchForward);
-		searchSettings.add(searchForward);
-		searchForward.addActionListener(actionHandler);
+		searchSettings.add(wrap);
+		wrap.addActionListener(actionHandler);
 
 		searchDirectory = new JRadioButton(jEdit.getProperty("search.directory"));
 		searchDirectory.setMnemonic(jEdit.getProperty("search.directory.mnemonic")
@@ -357,12 +390,6 @@ public class SearchDialog extends EnhancedDialog
 			.charAt(0));
 		searchSettings.add(hyperSearch);
 		hyperSearch.addActionListener(actionHandler);
-
-		wrap= new JCheckBox(jEdit.getProperty("search.wrap"));
-		wrap.setMnemonic(jEdit.getProperty("search.wrap.mnemonic")
-			.charAt(0));
-		searchSettings.add(wrap);
-		wrap.addActionListener(actionHandler);
 
 		return searchSettings;
 	}
@@ -494,17 +521,9 @@ public class SearchDialog extends EnhancedDialog
 
 	private void updateEnabled()
 	{
-		boolean replaceEnabled = !hyperSearch.isSelected();
+		wrap.setEnabled(!hyperSearch.isSelected());
 
-		stringReplace.setEnabled(replaceEnabled);
-		beanShellReplace.setEnabled(replaceEnabled);
-		replace.setEnabled(replaceEnabled);
-		replaceBtn.setEnabled(replaceEnabled);
-		replaceAndFindBtn.setEnabled(replaceEnabled);
-		replaceAllBtn.setEnabled(replaceEnabled);
-		wrap.setEnabled(replaceEnabled);
-
-		boolean reverseEnabled = replaceEnabled
+		boolean reverseEnabled = !hyperSearch.isSelected()
 			&& searchCurrentBuffer.isSelected();
 		searchBack.setEnabled(reverseEnabled);
 		searchForward.setEnabled(reverseEnabled);
@@ -521,6 +540,9 @@ public class SearchDialog extends EnhancedDialog
 		directory.setEnabled(directoryEnabled);
 		choose.setEnabled(directoryEnabled);
 		searchSubDirectories.setEnabled(directoryEnabled);
+
+		findBtn.setEnabled(!searchSelection.isSelected()
+			|| hyperSearch.isSelected());
 	}
 
 	private boolean save()
@@ -532,8 +554,15 @@ public class SearchDialog extends EnhancedDialog
 
 		SearchFileSet fileset = SearchAndReplace.getSearchFileSet();
 
-		if(searchCurrentBuffer.isSelected())
+		if(searchSelection.isSelected())
 			fileset = new CurrentBufferSet();
+		else if(searchCurrentBuffer.isSelected())
+		{
+			fileset = new CurrentBufferSet();
+
+			jEdit.setBooleanProperty("search.hypersearch.toggle",
+				hyperSearch.isSelected());
+		}
 		else if(searchAllBuffers.isSelected())
 			fileset = new AllBufferSet(filter);
 		else if(searchDirectory.isSelected())
@@ -561,9 +590,6 @@ public class SearchDialog extends EnhancedDialog
 
 		jEdit.setBooleanProperty("search.keepDialog.toggle",
 			keepDialog.isSelected());
-
-		jEdit.setBooleanProperty("search.hypersearch.toggle",
-			hyperSearch.isSelected());
 
 		boolean ok = true;
 
@@ -643,6 +669,12 @@ public class SearchDialog extends EnhancedDialog
 				SearchAndReplace.setReverseSearch(searchBack.isSelected());
 			else if(source == wrap)
 				SearchAndReplace.setAutoWrapAround(wrap.isSelected());
+			else if(source == searchCurrentBuffer)
+				hyperSearch.setSelected(false);
+			else if(source == searchSelection
+				|| source == searchAllBuffers
+				|| source == searchDirectory)
+				hyperSearch.setSelected(true);
 
 			updateEnabled();
 		}
@@ -685,7 +717,9 @@ public class SearchDialog extends EnhancedDialog
 			{
 				ok();
 			}
-			else if(source == replaceBtn)
+			else if(source == replaceBtn
+				|| (source == replaceAllBtn
+				&& searchSelection.isSelected()))
 			{
 				save();
 				if(SearchAndReplace.replace(view))

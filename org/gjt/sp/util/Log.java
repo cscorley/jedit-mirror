@@ -97,7 +97,6 @@ public class Log
 		}
 
 		Log.level = level;
-		Log.stream = stream;
 
 		// Log some stuff
 		log(MESSAGE,Log.class,"When reporting bugs, please"
@@ -105,7 +104,8 @@ public class Log
 		String[] props = {
 			"java.version", "java.vendor",
 			"java.compiler", "os.name", "os.version",
-			"os.arch", "user.home", "java.class.path",
+			"os.arch", "user.home", "java.home",
+			"java.class.path",
 			};
 		for(int i = 0; i < props.length; i++)
 		{
@@ -243,7 +243,7 @@ public class Log
 	// private members
 	private static Object LOCK = new Object();
 	private static Document logDocument;
-	private static int level;
+	private static int level = WARNING;
 	private static Writer stream;
 	private static String lineSep;
 	private static PrintStream realOut;

@@ -1,6 +1,6 @@
 /*
  * JARClassLoader.java - Loads classes from JAR files
- * Copyright (C) 1999, 2000 Slava Pestov
+ * Copyright (C) 1999, 2000, 2001 Slava Pestov
  * Portions copyright (C) 1999 mike dillon
  *
  * This program is free software; you can redistribute it and/or
@@ -25,6 +25,7 @@ import java.lang.reflect.Modifier;
 import java.net.*;
 import java.util.*;
 import java.util.zip.*;
+import org.gjt.sp.jedit.gui.DockableWindowManager;
 import org.gjt.sp.util.Log;
 
 /**
@@ -45,6 +46,7 @@ public class JARClassLoader extends ClassLoader
 		throws IOException
 	{
 		zipFile = new ZipFile(path);
+		jar = new EditPlugin.JAR(path,this);
 
 		Enumeration entires = zipFile.entries();
 		while(entires.hasMoreElements())
@@ -54,17 +56,31 @@ public class JARClassLoader extends ClassLoader
 			String lname = name.toLowerCase();
 			if(lname.equals("actions.xml"))
 			{
-				jEdit.loadActions(path + "!actions.xml",
+				jEdit.loadActions(
+					path + "!actions.xml",
 					new BufferedReader(new InputStreamReader(
-					zipFile.getInputStream(entry))),true);
+					zipFile.getInputStream(entry))),
+					jar.getActions());
+			}
+			if(lname.equals("dockables.xml"))
+			{
+				DockableWindowManager.loadDockableWindows(
+					path + "!dockables.xml",
+					new BufferedReader(new InputStreamReader(
+					zipFile.getInputStream(entry))),
+					jar.getActions());
 			}
 			else if(lname.endsWith(".props"))
 				jEdit.loadProps(zipFile.getInputStream(entry),true);
-			else if(name.endsWith("Plugin.class"))
-				pluginClasses.addElement(name);
+			else if(name.endsWith(".class"))
+			{
+				classHash.put(MiscUtilities.fileToClass(name),this);
+
+				if(name.endsWith("Plugin.class"))
+					pluginClasses.addElement(name);
+			}
 		}
 
-		jar = new EditPlugin.JAR(path,this);
 		jEdit.addPluginJAR(jar);
 	}
 
@@ -74,7 +90,45 @@ public class JARClassLoader extends ClassLoader
 	public Class loadClass(String clazz, boolean resolveIt)
 		throws ClassNotFoundException
 	{
-		return loadClass(clazz,resolveIt,true);
+		// see what JARClassLoader this class is in
+		Object obj = classHash.get(clazz);
+		if(obj == NO_CLASS)
+		{
+			// we remember which classes we don't exist
+			// because BeanShell tries loading all possible
+			// <imported prefix>.<class name> combinations
+			throw new ClassNotFoundException(clazz);
+		}
+		else if(obj instanceof ClassLoader)
+		{
+			JARClassLoader classLoader = (JARClassLoader)obj;
+			return classLoader._loadClass(clazz,resolveIt);
+		}
+
+		// if it's not in the class hash, and not marked as
+		// non-existent, try loading it from the CLASSPATH
+		try
+		{
+			Class cls;
+
+			/* Defer to whoever loaded us (such as JShell,
+			 * Echidna, etc) */
+			ClassLoader parentLoader = getClass().getClassLoader();
+			if (parentLoader != null)
+				cls = parentLoader.loadClass(clazz);
+			else
+				cls = findSystemClass(clazz);
+
+			return cls;
+		}
+		catch(ClassNotFoundException cnf)
+		{
+			// remember that this class doesn't exist for
+			// future reference
+			classHash.put(clazz,NO_CLASS);
+
+			throw cnf;
+		}
 	}
 
 	public InputStream getResourceAsStream(String name)
@@ -179,13 +233,20 @@ public class JARClassLoader extends ClassLoader
 				Log.log(Log.ERROR,this,t);
 
 				jar.addPlugin(new EditPlugin.Broken(name));
-				String[] args = { name, t.toString() };
+				String[] args = { jEdit.getProperty("plugin." + name + ".name",name),
+					t.toString() };
 				GUIUtilities.error(null,"plugin.start-error",args);
 			}
 		}
 	}
 
 	// private members
+
+	// used to mark non-existent classes in class hash
+	private static final Object NO_CLASS = new Object();
+
+	private static Hashtable classHash = new Hashtable();
+
 	private EditPlugin.JAR jar;
 	private Vector pluginClasses = new Vector();
 	private ZipFile zipFile;
@@ -200,7 +261,7 @@ public class JARClassLoader extends ClassLoader
 		{
 			if(plugins[i].getClass().getName().equals(name))
 			{
-				String[] args = { name };
+				String[] args = { jEdit.getProperty("plugin." + name + ".name",name) };
 				GUIUtilities.error(null,"plugin.already-loaded",args);
 				return;
 			}
@@ -221,21 +282,26 @@ public class JARClassLoader extends ClassLoader
 			&& !Modifier.isAbstract(modifiers)
 			&& EditPlugin.class.isAssignableFrom(clazz))
 		{
+			String label = jEdit.getProperty("plugin."
+				+ name + ".name");
 			String version = jEdit.getProperty("plugin."
 				+ name + ".version");
 
 			if(version == null)
 			{
-				Log.log(Log.WARNING,this,"Plugin " +
-					name + " doesn't"
-					+ " have a 'version' property.");
-				version = "";
+				Log.log(Log.ERROR,this,"Plugin " +
+					name + " needs"
+					+ " 'name' and 'version' properties.");
+				jar.addPlugin(new EditPlugin.Broken(name));
+				return;
 			}
-			else
-				version = " (version " + version + ")";
 
-			Log.log(Log.NOTICE,this,"Starting plugin " + name
-					+ version);
+			jar.getActions().setLabel(jEdit.getProperty(
+				"action-set.plugin",
+				new String[] { label }));
+
+			Log.log(Log.NOTICE,this,"Starting plugin " + label
+					+ " (version " + version + ")");
 
 			jar.addPlugin((EditPlugin)clazz.newInstance());
 		}
@@ -261,9 +327,13 @@ public class JARClassLoader extends ClassLoader
 
 			if(what.equals("jdk"))
 			{
-				if(System.getProperty("java.version").compareTo(arg) < 0)
+				if(MiscUtilities.compareStrings(
+					System.getProperty("java.version"),
+					arg,false) < 0)
 				{
-					String[] args = { name, arg,
+					String[] args = {
+						jEdit.getProperty("plugin." + name + ".name"),
+						arg,
 						System.getProperty("java.version") };
 					GUIUtilities.error(null,"plugin.dep-jdk",args);
 					return false;
@@ -271,10 +341,13 @@ public class JARClassLoader extends ClassLoader
 			}
 			else if(what.equals("jedit"))
 			{
-				if(jEdit.getBuild().compareTo(arg) < 0)
+				if(MiscUtilities.compareStrings(
+					jEdit.getBuild(),arg,false) < 0)
 				{
 					String needs = MiscUtilities.buildToVersion(arg);
-					String[] args = { name, needs,
+					String[] args = {
+						jEdit.getProperty("plugin." + name + ".name"),
+						needs,
 						jEdit.getVersion() };
 					GUIUtilities.error(null,"plugin.dep-jedit",args);
 					return false;
@@ -298,22 +371,28 @@ public class JARClassLoader extends ClassLoader
 
 				if(currVersion == null)
 				{
-					String[] args = { name, needVersion, plugin };
+					String[] args = {
+						jEdit.getProperty("plugin." + name + ".name"),
+						needVersion, plugin };
 					GUIUtilities.error(null,"plugin.dep-plugin.no-version",args);
 					return false;
 				}
 
-				if(MiscUtilities.compareVersions(currVersion,
-					needVersion) < 0)
+				if(MiscUtilities.compareStrings(currVersion,
+					needVersion,false) < 0)
 				{
-					String[] args = { name, needVersion, plugin, currVersion };
+					String[] args = {
+						jEdit.getProperty("plugin." + name + ".name"),
+						needVersion, plugin, currVersion };
 					GUIUtilities.error(null,"plugin.dep-plugin",args);
 					return false;
 				}
 
 				if(jEdit.getPlugin(plugin) instanceof EditPlugin.Broken)
 				{
-					String[] args = { name, plugin };
+					String[] args = {
+						jEdit.getProperty("plugin." + name + ".name"),
+						plugin };
 					GUIUtilities.error(null,"plugin.dep-plugin.broken",args);
 					return false;
 				}
@@ -326,7 +405,9 @@ public class JARClassLoader extends ClassLoader
 				}
 				catch(Exception e)
 				{
-					String[] args = { name, arg };
+					String[] args = { 
+						jEdit.getProperty("plugin." + name + ".name"),
+						arg };
 					GUIUtilities.error(null,"plugin.dep-class",args);
 					return false;
 				}
@@ -342,29 +423,8 @@ public class JARClassLoader extends ClassLoader
 		return true;
 	}
 
-	private Class findOtherClass(String clazz, boolean resolveIt)
-		throws ClassNotFoundException
-	{
-		EditPlugin.JAR[] jars = jEdit.getPluginJARs();
-		for(int i = 0; i < jars.length; i++)
-		{
-			JARClassLoader loader = jars[i].getClassLoader();
-			Class cls = loader.loadClass(clazz,resolveIt,
-				false);
-			if(cls != null)
-				return cls;
-		}
-
-		/* Defer to whoever loaded us (such as JShell, Echidna, etc) */
-                ClassLoader loader = getClass().getClassLoader();
-		if (loader != null)
-			return loader.loadClass(clazz);
-
-		/* Doesn't exist in any other plugin, look in system classes */
-		return findSystemClass(clazz);
-	}
-
-	private Class loadClass(String clazz, boolean resolveIt, boolean doDepencies)
+	// Load class from this JAR only.
+	private Class _loadClass(String clazz, boolean resolveIt)
 		throws ClassNotFoundException
 	{
 		Class cls = findLoadedClass(clazz);
@@ -375,14 +435,6 @@ public class JARClassLoader extends ClassLoader
 			return cls;
 		}
 
-		if(zipFile == null)
-		{
-			if(doDepencies)
-				return findOtherClass(clazz,resolveIt);
-			else
-				return null;
-		}
-
 		String name = MiscUtilities.classToFile(clazz);
 
 		try
@@ -390,12 +442,7 @@ public class JARClassLoader extends ClassLoader
 			ZipEntry entry = zipFile.getEntry(name);
 
 			if(entry == null)
-			{
-				if(doDepencies)
-					return findOtherClass(clazz,resolveIt);
-				else
-					return null;
-			}
+				throw new ClassNotFoundException(clazz);
 
 			InputStream in = zipFile.getInputStream(entry);
 

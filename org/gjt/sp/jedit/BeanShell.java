@@ -1,5 +1,8 @@
 /*
  * BeanShell.java - BeanShell scripting support
+ * :tabSize=8:indentSize=8:noTabs=false:
+ * :folding=explicit:collapseFolds=1:
+ *
  * Copyright (C) 2000, 2001 Slava Pestov
  *
  * This program is free software; you can redistribute it and/or
@@ -19,19 +22,21 @@
 
 package org.gjt.sp.jedit;
 
+//{{{ Imports
 import bsh.*;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.Segment;
 import javax.swing.JFileChooser;
 import java.lang.reflect.InvocationTargetException;
 import java.io.*;
 import org.gjt.sp.jedit.io.*;
 import org.gjt.sp.jedit.gui.BeanShellErrorDialog;
-import org.gjt.sp.jedit.textarea.JEditTextArea;
+import org.gjt.sp.jedit.textarea.*;
 import org.gjt.sp.util.Log;
+//}}}
 
 public class BeanShell
 {
+	//{{{ evalSelection() method
 	/**
 	 * Evaluates the text selected in the specified text area.
 	 * @since jEdit 2.7pre2
@@ -47,10 +52,11 @@ public class BeanShell
 		Object returnValue = eval(view,command,false);
 		if(returnValue != null)
 			textArea.setSelectedText(returnValue.toString());
-	}
+	} //}}}
 
+	//{{{ showEvaluateDialog() method
 	/**
-	 * Prompts for a BeanShell expression to evaluate;
+	 * Prompts for a BeanShell expression to evaluate.
 	 * @since jEdit 2.7pre2
 	 */
 	public static void showEvaluateDialog(View view)
@@ -76,9 +82,9 @@ public class BeanShell
 					returnValue = eval(view,command,true);
 				}
 			}
-			catch(Error t)
+			catch(Throwable t)
 			{
-				// BeanShell error occured, abort execution
+				// BeanShell error occurred, abort execution
 			}
 
 			if(returnValue != null)
@@ -87,8 +93,75 @@ public class BeanShell
 				GUIUtilities.message(view,"beanshell-eval",args);
 			}
 		}
-	}
+	} //}}}
 
+	//{{{ showEvaluateLinesDialog() method
+	/**
+	 * Evaluates the specified script for each selected line.
+	 * @since jEdit 4.0pre1
+	 */
+	public static void showEvaluateLinesDialog(View view)
+	{
+		String command = GUIUtilities.input(view,"beanshell-eval-line",null);
+		if(command != null)
+		{
+			if(!command.endsWith(";"))
+				command = command + ";";
+
+			if(view.getMacroRecorder() != null)
+				view.getMacroRecorder().record(1,command);
+
+			JEditTextArea textArea = view.getTextArea();
+			Buffer buffer = view.getBuffer();
+
+			try
+			{
+				buffer.beginCompoundEdit();
+
+				Selection[] selection = textArea.getSelection();
+				for(int i = 0; i < selection.length; i++)
+				{
+					Selection s = selection[i];
+					for(int j = s.getStartLine(); j <= s.getEndLine(); j++)
+					{
+						// if selection ends on the start of a
+						// line, don't filter that line
+						if(s.getEnd() == textArea.getLineStartOffset(j))
+							break;
+
+						global.setVariable("line",new Integer(j));
+						global.setVariable("index",new Integer(
+							j - s.getStartLine()));
+						int start = s.getStart(buffer,j);
+						int end = s.getEnd(buffer,j);
+						String text = buffer.getText(start,
+							end - start);
+						global.setVariable("text",text);
+
+						Object returnValue = eval(view,command,true);
+						if(returnValue != null)
+						{
+							buffer.remove(start,end - start);
+							buffer.insert(start,
+								returnValue.toString());
+						}
+					}
+				}
+			}
+			catch(Throwable e)
+			{
+				// BeanShell error occurred, abort execution
+			}
+			finally
+			{
+				buffer.endCompoundEdit();
+			}
+
+			textArea.selectNone();
+		}
+	} //}}}
+
+	//{{{ showRunScriptDialog() method
 	/**
 	 * Prompts for a BeanShell script to run.
 	 * @since jEdit 2.7pre2
@@ -112,8 +185,9 @@ public class BeanShell
 				buffer.endCompoundEdit();
 			}
 		}
-	}
+	} //}}}
 
+	//{{{ runScript() method
 	/**
 	 * Runs a BeanShell script.
 	 * @param view The view
@@ -140,23 +214,13 @@ public class BeanShell
 
 		try
 		{
-			if(buffer != null && buffer.isLoaded())
+			if(buffer != null)
 			{
-				StringBuffer buf = new StringBuffer();
-				try
-				{
-					buf.append(buffer.getText(0,buffer.getLength()));
-				}
-				catch(BadLocationException e)
-				{
-					// XXX
-					throw new InternalError();
-				}
+				if(!buffer.isLoaded())
+					VFSManager.waitForRequests();
 
-				// Ugly workaround for a BeanShell bug
-				buf.append("\n");
-
-				in = new StringReader(buf.toString());
+				in = new StringReader(buffer.getText(0,
+					buffer.getLength()));
 			}
 			else
 			{
@@ -187,8 +251,9 @@ public class BeanShell
 					new String[] { path, io.toString() });
 			}
 		}
-	}
+	} //}}}
 
+	//{{{ runScript() method
 	/**
 	 * Runs a BeanShell script.
 	 * @param view The view
@@ -247,8 +312,9 @@ public class BeanShell
 		{
 			running = false;
 		}
-	}
+	} //}}}
 
+	//{{{ eval() method
 	/**
 	 * Evaluates the specified BeanShell expression.
 	 * @param view The view (may be null)
@@ -261,8 +327,9 @@ public class BeanShell
 		boolean rethrowBshErrors)
 	{
 		return eval(view,global,command,rethrowBshErrors);
-	}
+	} //}}}
 
+	//{{{ eval() method
 	/**
 	 * Evaluates the specified BeanShell expression.
 	 * @param view The view (may be null)
@@ -307,8 +374,9 @@ public class BeanShell
 		}
 
 		return null;
-	}
+	} //}}}
 
+	//{{{ cacheBlock() method
 	/**
 	 * Caches a block of code, returning a handle that can be passed to
 	 * runCachedBlock().
@@ -337,8 +405,9 @@ public class BeanShell
 		eval(null,code,false);
 
 		return name;
-	}
+	} //}}}
 
+	//{{{ runCachedBlock() method
 	/**
 	 * Runs a cached block of code in the specified namespace. Faster than
 	 * evaluating the block each time.
@@ -351,7 +420,7 @@ public class BeanShell
 	public static Object runCachedBlock(String id, View view, NameSpace namespace)
 	{
 		if(namespace == null)
-			namespace = internal;
+			namespace = global;
 
 		Object[] args = { namespace };
 
@@ -405,8 +474,9 @@ public class BeanShell
 		}
 
 		return null;
-	}
+	} //}}}
 
+	//{{{ isScriptRunning() method
 	/**
 	 * Returns if a BeanShell script or macro is currently running.
 	 * @since jEdit 2.7pre2
@@ -414,8 +484,9 @@ public class BeanShell
 	public static boolean isScriptRunning()
 	{
 		return running;
-	}
+	} //}}}
 
+	//{{{ getNameSpace() method
 	/**
 	 * Returns the global namespace.
 	 * @since jEdit 3.2pre5
@@ -423,8 +494,11 @@ public class BeanShell
 	public static NameSpace getNameSpace()
 	{
 		return global;
-	}
+	} //}}}
 
+	//{{{ Package-private members
+
+	//{{{ init() method
 	static void init()
 	{
 		Log.log(Log.DEBUG,BeanShell.class,"Initializing BeanShell"
@@ -452,19 +526,26 @@ public class BeanShell
 
 		// jedit object in global namespace is set up by jedit.bsh
 		internal = (NameSpace)eval(null,"__cruft.namespace;",false);
-	}
+	} //}}}
 
-	// private members
+	//}}}
+
+	//{{{ Private members
+
+	//{{{ Instance variables
 	private static Interpreter interpForMethods;
 	private static NameSpace global;
 	private static NameSpace internal;
 	private static boolean running;
 	private static int cachedBlockCounter;
+	//}}}
 
-	// until Pat updates Interpreter.java
+	//{{{ createInterpreter() method
 	private static Interpreter createInterpreter(NameSpace nameSpace)
 	{
 		return new Interpreter(null,System.out,System.err,
 			false,nameSpace);
-	}
+	} //}}}
+
+	//}}}
 }

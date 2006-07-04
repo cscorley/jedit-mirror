@@ -1,5 +1,8 @@
 /*
  * HyperSearchResults.java - HyperSearch results
+ * :tabSize=8:indentSize=8:noTabs=false:
+ * :folding=explicit:collapseFolds=1:
+ *
  * Copyright (C) 1998, 1999, 2000, 2001 Slava Pestov
  *
  * This program is free software; you can redistribute it and/or
@@ -19,8 +22,10 @@
 
 package org.gjt.sp.jedit.search;
 
+//{{{ Imports
 import javax.swing.*;
 import javax.swing.border.*;
+import javax.swing.event.*;
 import javax.swing.text.*;
 import javax.swing.tree.*;
 import java.awt.*;
@@ -28,6 +33,7 @@ import java.awt.event.*;
 import org.gjt.sp.jedit.gui.*;
 import org.gjt.sp.jedit.io.VFSManager;
 import org.gjt.sp.jedit.msg.*;
+import org.gjt.sp.jedit.textarea.*;
 import org.gjt.sp.jedit.jEdit;
 import org.gjt.sp.jedit.Buffer;
 import org.gjt.sp.jedit.EBComponent;
@@ -35,17 +41,18 @@ import org.gjt.sp.jedit.EBMessage;
 import org.gjt.sp.jedit.EditBus;
 import org.gjt.sp.jedit.View;
 import org.gjt.sp.util.Log;
+//}}}
 
 /**
  * HyperSearch results window.
  * @author Slava Pestov
  * @version $Id$
  */
-public class HyperSearchResults extends JPanel implements DockableWindow,
-	EBComponent
+public class HyperSearchResults extends JPanel implements EBComponent
 {
 	public static final String NAME = "hypersearch-results";
 
+	//{{{ HyperSearchResults constructor
 	public HyperSearchResults(View view)
 	{
 		super(new BorderLayout());
@@ -66,6 +73,7 @@ public class HyperSearchResults extends JPanel implements DockableWindow,
 		resultTree.putClientProperty("JTree.lineStyle", "Angled");
 		resultTree.setEditable(false);
 
+		resultTree.addTreeSelectionListener(new TreeSelectionHandler());
 		resultTree.addMouseListener(new MouseHandler());
 
 		JScrollPane scrollPane = new JScrollPane(resultTree);
@@ -73,30 +81,30 @@ public class HyperSearchResults extends JPanel implements DockableWindow,
 		dim.width = 400;
 		scrollPane.setPreferredSize(dim);
 		add(BorderLayout.CENTER, scrollPane);
-	}
+	} //}}}
 
-	public String getName()
+	//{{{ requestDefaultFocus() method
+	public boolean requestDefaultFocus()
 	{
-		return NAME;
-	}
+		resultTree.grabFocus();
+		return true;
+	} //}}}
 
-	public Component getComponent()
-	{
-		return this;
-	}
-
+	//{{{ addNotify() method
 	public void addNotify()
 	{
 		super.addNotify();
 		EditBus.addToBus(this);
-	}
+	} //}}}
 
+	//{{{ removeNotify() method
 	public void removeNotify()
 	{
 		super.removeNotify();
 		EditBus.removeFromBus(this);
-	}
+	} //}}}
 
+	//{{{ handleMessage() method
 	public void handleMessage(EBMessage msg)
 	{
 		if(msg instanceof BufferUpdate)
@@ -140,20 +148,23 @@ public class HyperSearchResults extends JPanel implements DockableWindow,
 				}
 			}
 		}
-	}
+	} //}}}
 
+	//{{{ getTreeModel() method
 	public DefaultTreeModel getTreeModel()
 	{
 		return resultTreeModel;
-	}
+	} //}}}
 
+	//{{{ searchStarted() method
 	public void searchStarted()
 	{
 		caption.setText(jEdit.getProperty("hypersearch-results.searching"));
 		resultTreeRoot.removeAllChildren();
 		resultTreeModel.reload(resultTreeRoot);
-	}
+	} //}}}
 
+	//{{{ searchDone() method
 	public void searchDone(int resultCount, int bufferCount)
 	{
 		updateCaption(resultCount,bufferCount);
@@ -162,18 +173,18 @@ public class HyperSearchResults extends JPanel implements DockableWindow,
 		{
 			public void run()
 			{
-				if(resultTreeRoot.getChildCount() == 1)
+				for(int i = 0; i < resultTreeRoot.getChildCount(); i++)
 				{
 					resultTree.expandPath(new TreePath(
 						((DefaultMutableTreeNode)
-						resultTreeRoot.getChildAt(0))
+						resultTreeRoot.getChildAt(i))
 						.getPath()));
 				}
 			}
 		});
-	}
+	} //}}}
 
-	// private members
+	//{{{ Private members
 	private View view;
 
 	private JLabel caption;
@@ -181,71 +192,146 @@ public class HyperSearchResults extends JPanel implements DockableWindow,
 	private DefaultMutableTreeNode resultTreeRoot;
 	private DefaultTreeModel resultTreeModel;
 
+	//{{{ goToSelectedNode() method
+	private void goToSelectedNode()
+	{
+		TreePath path = resultTree.getSelectionPath();
+		if(path == null)
+			return;
+
+		Object value = ((DefaultMutableTreeNode)path
+			.getLastPathComponent()).getUserObject();
+
+		if(value instanceof String)
+		{
+			Buffer buffer = jEdit.openFile(view,(String)value);
+			if(buffer == null)
+				return;
+
+			view.setBuffer(buffer);
+			view.toFront();
+			view.requestFocus();
+		}
+		else
+		{
+			final HyperSearchResult result = (HyperSearchResult)value;
+			final Buffer buffer = result.getBuffer();
+
+			if(buffer == null)
+				return;
+
+			VFSManager.runInAWTThread(new Runnable()
+			{
+				public void run()
+				{
+					int start = result.startPos.getOffset();
+					int end = result.endPos.getOffset();
+					Selection s = new Selection.Range(start,end);
+					view.setBuffer(buffer);
+					JEditTextArea textArea = view.getTextArea();
+					if(textArea.isMultipleSelectionEnabled())
+						textArea.addToSelection(s);
+					else
+						textArea.setSelection(s);
+
+					textArea.moveCaretPosition(start);
+					view.toFront();
+					view.requestFocus();
+				}
+			});
+		}
+	} //}}}
+
+	//{{{ updateCaption() method
 	private void updateCaption(int resultCount, int bufferCount)
 	{
 		Object[] pp = { new Integer(resultCount), new Integer(bufferCount) };
 		caption.setText(jEdit.getProperty("hypersearch-results.caption",pp));
-	}
+	} //}}}
 
+	//}}}
+
+	//{{{ MouseHandler class
 	class MouseHandler extends MouseAdapter
 	{
+		//{{{ mouseClicked() method
 		public void mouseClicked(MouseEvent evt)
 		{
-			TreePath path = resultTree.getPathForLocation(
+			TreePath path1 = resultTree.getPathForLocation(
 				evt.getX(),evt.getY());
-			if(path == null)
+			if(path1 == null)
 				return;
 
-			Object value = ((DefaultMutableTreeNode)path
-				.getLastPathComponent()).getUserObject();
-
-			if(value instanceof String)
+			TreePath path2 = resultTree.getSelectionPath();
+			// if same thing selected twice, another selection event
+			// is not sent, so we handle it in the mouse event
+			if(path1.equals(path2))
 			{
-				Buffer buffer = jEdit.openFile(view,(String)value);
-				if(buffer == null)
-					return;
-
-				view.setBuffer(buffer);
-				view.toFront();
-				view.requestFocus();
+				resultTree.setSelectionPath(path1);
+				goToSelectedNode();
 			}
-			else
-			{
-				final HyperSearchResult result = (HyperSearchResult)value;
-				final Buffer buffer = result.getBuffer();
+		} //}}}
+	} //}}}
 
-				if(buffer == null)
-					return;
+	//{{{ TreeSelectionHandler class
+	class TreeSelectionHandler implements TreeSelectionListener
+	{
+		//{{{ valueChanged() method
+		public void valueChanged(TreeSelectionEvent evt)
+		{
+			goToSelectedNode();
+		} //}}}
+	} //}}}
 
-				VFSManager.runInAWTThread(new Runnable()
-				{
-					public void run()
-					{
-						int pos = result.linePos.getOffset();
-						view.setBuffer(buffer);
-						view.getTextArea().setCaretPosition(pos);
-						view.toFront();
-						view.requestFocus();
-					}
-				});
-			}
-		}
-	}
-
-
+	//{{{ ResultCellRenderer class
 	class ResultCellRenderer extends DefaultTreeCellRenderer
 	{
+		Font plainFont, boldFont;
+
+		//{{{ ResultCellRenderer constructor
+		ResultCellRenderer()
+		{
+			plainFont = UIManager.getFont("Tree.font");
+			boldFont = new Font(plainFont.getName(),Font.BOLD,
+				plainFont.getSize());
+		} //}}}
+
+		//{{{ getTreeCellRendererComponent() method
 		public Component getTreeCellRendererComponent(JTree tree,
 			Object value, boolean sel, boolean expanded,
 			boolean leaf, int row, boolean hasFocus)
 		{
 			Component comp = super.getTreeCellRendererComponent(tree,value,sel,
 				expanded,leaf,row,hasFocus);
-			if (!(comp instanceof JLabel))
-				return comp;
-			JLabel label = (JLabel)comp;
-			label.setIcon(null);
-			return label;
-		}
-	}
+			setIcon(null);
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode)value;
+			if(node.getUserObject() instanceof String)
+			{
+				// file name
+				ResultCellRenderer.this.setFont(boldFont);
+				int count = node.getChildCount();
+				if(count == 1)
+				{
+					setText(jEdit.getProperty("hypersearch-results"
+						+ ".file-caption1",new Object[] {
+						node.getUserObject()
+						}));
+				}
+				else
+				{
+					setText(jEdit.getProperty("hypersearch-results"
+						+ ".file-caption",new Object[] {
+						node.getUserObject(),
+						new Integer(count)
+						}));
+				}
+			}
+			else
+			{
+				ResultCellRenderer.this.setFont(plainFont);
+			}
+
+			return this;
+		} //}}}
+	} //}}}
 }

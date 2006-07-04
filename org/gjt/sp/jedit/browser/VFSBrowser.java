@@ -39,7 +39,7 @@ import org.gjt.sp.util.Log;
  * @author Slava Pestov
  * @version $Id$
  */
-public class VFSBrowser extends JPanel implements EBComponent, DockableWindow
+public class VFSBrowser extends JPanel implements EBComponent
 {
 	public static final String NAME = "vfs.browser";
 
@@ -129,11 +129,6 @@ public class VFSBrowser extends JPanel implements EBComponent, DockableWindow
 		filterCheckbox.setSelected(mode != BROWSER ||
 			jEdit.getBooleanProperty("vfs.browser.filter-enabled"));
 
-		// we ensure that the foreground color is not an UIResource
-		// so that updateUI() does not reset the color back to the
-		// default...
-		filterCheckbox.setForeground(new Color(
-			UIManager.getColor("Label.foreground").getRGB()));
 		filterCheckbox.addActionListener(actionHandler);
 		cons.gridx = 0;
 		cons.weightx = 0.0f;
@@ -221,6 +216,11 @@ public class VFSBrowser extends JPanel implements EBComponent, DockableWindow
 		setDirectory(path);
 	}
 
+	public boolean requestDefaultFocus()
+	{
+		return browserView.requestDefaultFocus();
+	}
+
 	public void addNotify()
 	{
 		super.addNotify();
@@ -240,18 +240,6 @@ public class VFSBrowser extends JPanel implements EBComponent, DockableWindow
 		}
 		EditBus.removeFromBus(this);
 	}
-
-	// DockableWindow implementation
-	public String getName()
-	{
-		return NAME;
-	}
-
-	public Component getComponent()
-	{
-		return this;
-	}
-	// end DockableWindow implementation
 
 	public void handleMessage(EBMessage msg)
 	{
@@ -566,15 +554,8 @@ public class VFSBrowser extends JPanel implements EBComponent, DockableWindow
 					return file2.type - file1.type;
 			}
 
-			if(sortIgnoreCase)
-			{
-				return file1.name.toLowerCase().compareTo(
-					file2.name.toLowerCase());
-			}
-			else
-			{
-				return file1.name.compareTo(file2.name);
-			}
+			return MiscUtilities.compareStrings(file1.name,
+				file2.name,sortIgnoreCase);
 		}
 	}
 
@@ -807,14 +788,9 @@ public class VFSBrowser extends JPanel implements EBComponent, DockableWindow
 				setDirectory(System.getProperty("user.home"));
 			else if(source == synchronize)
 			{
-				if(view != null)
-				{
-					Buffer buffer = view.getBuffer();
-					setDirectory(buffer.getVFS().getParentOfPath(
-						buffer.getPath()));
-				}
-				else
-					getToolkit().beep();
+				Buffer buffer = view.getBuffer();
+				setDirectory(buffer.getVFS().getParentOfPath(
+					buffer.getPath()));
 			}
 		}
 	}
@@ -877,7 +853,8 @@ public class VFSBrowser extends JPanel implements EBComponent, DockableWindow
 				if(popup == null || !popup.isVisible())
 				{
 					createPopup();
-					popup.show(upButton,0,upButton.getHeight());
+					GUIUtilities.showPopupMenu(popup,
+						upButton,0,upButton.getHeight());
 				}
 				else
 				{

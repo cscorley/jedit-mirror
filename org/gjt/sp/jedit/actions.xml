@@ -5,6 +5,9 @@
 <!-- jEdit action table                                                      -->
 <!-- Copyright (C) 2000, 2001 Slava Pestov                                   -->
 
+<!-- :tabSize=8:indentSize=8:noTabs=false:                                   -->
+<!-- :folding=indent:collapseFolds=1:                                        -->
+
 <!-- Actions are the 'glue' that binds menu item selections and keystrokes   -->
 <!-- to jEdit's APIs. For simplicity and compactness, they are written in    -->
 <!-- the BeanShell scripting language.                                       -->
@@ -26,7 +29,7 @@
 <ACTION NAME="add-marker-shortcut" NO_REPEAT="TRUE" NO_RECORD="TRUE">
 	<CODE>
 		view.getInputHandler().readNextChar(
-			jEdit.getProperty("view.status.marker-prompt"),
+			jEdit.getProperty("view.status.add-marker"),
 			"buffer.addMarker(__char__,textArea.getCaretPosition());");
 	</CODE>
 </ACTION>
@@ -85,9 +88,15 @@
 	</CODE>
 </ACTION>
 
+<ACTION NAME="collapse-all-folds">
+	<CODE>
+		textArea.getFoldVisibilityManager().expandFolds(1);
+	</CODE>
+</ACTION>
+
 <ACTION NAME="collapse-fold">
 	<CODE>
-		buffer.collapseFoldAt(textArea.getCaretLine());
+		textArea.getFoldVisibilityManager().collapseFold(textArea.getCaretLine());
 	</CODE>
 </ACTION>
 
@@ -112,7 +121,7 @@
 <ACTION NAME="copy-append-string-register" NO_REPEAT="TRUE" NO_RECORD="TRUE">
 	<CODE>
 		view.getInputHandler().readNextChar(
-			jEdit.getProperty("view.status.register-prompt"),
+			jEdit.getProperty("view.status.copy-append-string-register"),
 			"Registers.append(textArea,__char__,\"\\n\",false);");
 	</CODE>
 </ACTION>
@@ -120,7 +129,7 @@
 <ACTION NAME="copy-string-register" NO_REPEAT="TRUE" NO_RECORD="TRUE">
 	<CODE>
 		view.getInputHandler().readNextChar(
-			jEdit.getProperty("view.status.register-prompt"),
+			jEdit.getProperty("view.status.copy-string-register"),
 			"Registers.copy(textArea,__char__);");
 	</CODE>
 </ACTION>
@@ -140,7 +149,7 @@
 <ACTION NAME="cut-append-string-register" NO_REPEAT="TRUE" NO_RECORD="TRUE">
 	<CODE>
 		view.getInputHandler().readNextChar(
-			jEdit.getProperty("view.status.register-prompt"),
+			jEdit.getProperty("view.status.cut-append-string-register"),
 			"Registers.append(textArea,__char__,\"\\n\",true);");
 	</CODE>
 </ACTION>
@@ -148,7 +157,7 @@
 <ACTION NAME="cut-string-register" NO_REPEAT="TRUE" NO_RECORD="TRUE">
 	<CODE>
 		view.getInputHandler().readNextChar(
-			jEdit.getProperty("view.status.register-prompt"),
+			jEdit.getProperty("view.status.cut-string-register"),
 			"Registers.cut(textArea,__char__);");
 	</CODE>
 </ACTION>
@@ -189,42 +198,6 @@
 	</CODE>
 </ACTION>
 
-<ACTION NAME="docking-bottom-expanded">
-	<CODE>
-		view.getDockableWindowManager().getBottomDockingArea().toggleCollapsed();
-	</CODE>
-	<IS_SELECTED>
-		return !view.getDockableWindowManager().getBottomDockingArea().isCollapsed();
-	</IS_SELECTED>
-</ACTION>
-
-<ACTION NAME="docking-left-expanded">
-	<CODE>
-		view.getDockableWindowManager().getLeftDockingArea().toggleCollapsed();
-	</CODE>
-	<IS_SELECTED>
-		return !view.getDockableWindowManager().getLeftDockingArea().isCollapsed();
-	</IS_SELECTED>
-</ACTION>
-
-<ACTION NAME="docking-right-expanded">
-	<CODE>
-		view.getDockableWindowManager().getRightDockingArea().toggleCollapsed();
-	</CODE>
-	<IS_SELECTED>
-		return !view.getDockableWindowManager().getRightDockingArea().isCollapsed();
-	</IS_SELECTED>
-</ACTION>
-
-<ACTION NAME="docking-top-expanded">
-	<CODE>
-		view.getDockableWindowManager().getTopDockingArea().toggleCollapsed();
-	</CODE>
-	<IS_SELECTED>
-		return !view.getDockableWindowManager().getTopDockingArea().isCollapsed();
-	</IS_SELECTED>
-</ACTION>
-
 <ACTION NAME="document-end">
 	<CODE>
 		if(textArea.isMultipleSelectionEnabled())
@@ -255,6 +228,12 @@
 	</CODE>
 </ACTION>
 
+<ACTION NAME="eval-for-selected-lines">
+	<CODE>
+		BeanShell.showEvaluateLinesDialog(view);
+	</CODE>
+</ACTION>
+
 <ACTION NAME="eval-selection">
 	<CODE>
 		BeanShell.evalSelection(view,textArea);
@@ -269,7 +248,7 @@
 
 <ACTION NAME="expand-all-folds">
 	<CODE>
-		buffer.expandAllFolds();
+		textArea.getFoldVisibilityManager().expandAllFolds();
 	</CODE>
 </ACTION>
 
@@ -281,13 +260,13 @@
 
 <ACTION NAME="expand-fold">
 	<CODE>
-		buffer.expandFoldAt(textArea.getCaretLine(),true,textArea);
+		textArea.getFoldVisibilityManager().expandFold(textArea.getCaretLine(),true);
 	</CODE>
 </ACTION>
 
 <ACTION NAME="expand-one-level">
 	<CODE>
-		buffer.expandFoldAt(textArea.getCaretLine(),false,textArea);
+		textArea.getFoldVisibilityManager().expandFold(textArea.getCaretLine(),false);
 	</CODE>
 </ACTION>
 
@@ -295,13 +274,13 @@
 	<CODE>
 		view.getInputHandler().readNextChar(
 			jEdit.getProperty("view.status.expand-folds"),
-			"buffer.expandFolds(__char__);");
+			"textArea.getFoldVisibilityManager().expandFolds(__char__);");
 	</CODE>
 </ACTION>
 
 <ACTION NAME="find" NO_RECORD="TRUE">
 	<CODE>
-		new SearchDialog(view,null,SearchDialog.CURRENT_BUFFER);
+		new SearchDialog(view,textArea.getSelectedText(),SearchDialog.CURRENT_BUFFER);
 	</CODE>
 </ACTION>
 
@@ -316,12 +295,6 @@
 	<CODE>
 		SearchAndReplace.setReverseSearch(true);
 		SearchAndReplace.find(view);
-	</CODE>
-</ACTION>
-
-<ACTION NAME="find-selection" NO_RECORD="TRUE">
-	<CODE>
-		new SearchDialog(view,textArea.getSelectedText());
 	</CODE>
 </ACTION>
 
@@ -346,7 +319,7 @@
 <ACTION NAME="goto-marker" NO_REPEAT="TRUE" NO_RECORD="TRUE">
 	<CODE>
 		view.getInputHandler().readNextChar(
-			jEdit.getProperty("view.status.marker-prompt"),
+			jEdit.getProperty("view.status.goto-marker"),
 			"textArea.goToMarker(__char__,false);");
 	</CODE>
 </ACTION>
@@ -369,15 +342,6 @@
 	</CODE>
 </ACTION>
 
-<ACTION NAME="hypersearch-results">
-	<CODE>
-		view.getDockableWindowManager().toggleDockableWindow("hypersearch-results");
-	</CODE>
-	<IS_SELECTED>
-		return view.getDockableWindowManager().isDockableWindowVisible("hypersearch-results");
-	</IS_SELECTED>
-</ACTION>
-
 <ACTION NAME="indent-lines">
 	<CODE>
 		textArea.indentSelectedLines();
@@ -395,6 +359,12 @@
 		view.getInputHandler().readNextChar(
 			jEdit.getProperty("view.status.insert-literal"),
 			"textArea.setSelectedText(String.valueOf(__char__));");
+	</CODE>
+</ACTION>
+
+<ACTION NAME="invert-selection">
+	<CODE>
+		textArea.invertSelection();
 	</CODE>
 </ACTION>
 
@@ -416,24 +386,21 @@
 	</CODE>
 </ACTION>
 
-<ACTION NAME="log-viewer">
-	<CODE>
-		view.getDockableWindowManager().toggleDockableWindow("log-viewer");
-	</CODE>
-	<IS_SELECTED>
-		return view.getDockableWindowManager().isDockableWindowVisible("log-viewer");
-	</IS_SELECTED>
-</ACTION>
-
 <ACTION NAME="match-bracket">
 	<CODE>
 		textArea.goToMatchingBracket();
 	</CODE>
 </ACTION>
 
+<ACTION NAME="memory-status">
+	<CODE>
+		jEdit.showMemoryDialog(view);
+	</CODE>
+</ACTION>
+
 <ACTION NAME="narrow">
 	<CODE>
-		buffer.narrow(textArea.getSelectionStartLine(),textArea.getSelectionEndLine());
+		textArea.narrowToSelection();
 	</CODE>
 </ACTION>
 
@@ -536,7 +503,7 @@
 <ACTION NAME="paste-string-register" NO_REPEAT="TRUE" NO_RECORD="TRUE">
 	<CODE>
 		view.getInputHandler().readNextChar(
-			jEdit.getProperty("view.status.register-prompt"),
+			jEdit.getProperty("view.status.paste-string-register"),
 			"Registers.paste(textArea,__char__);");
 	</CODE>
 </ACTION>
@@ -639,7 +606,7 @@
 
 <ACTION NAME="redo">
 	<CODE>
-		buffer.redo();
+		buffer.redo(textArea);
 	</CODE>
 </ACTION>
 
@@ -865,7 +832,7 @@
 <ACTION NAME="select-marker" NO_REPEAT="TRUE" NO_RECORD="TRUE">
 	<CODE>
 		view.getInputHandler().readNextChar(
-			jEdit.getProperty("view.status.marker-prompt"),
+			jEdit.getProperty("view.status.select-marker"),
 			"textArea.goToMarker(__char__,true);");
 	</CODE>
 </ACTION>
@@ -999,7 +966,7 @@
 <ACTION NAME="swap-marker" NO_REPEAT="TRUE" NO_RECORD="TRUE">
 	<CODE>
 		view.getInputHandler().readNextChar(
-			jEdit.getProperty("view.status.marker-prompt"),
+			jEdit.getProperty("view.status.swap-marker"),
 			"textArea.swapMarkerAndCaret(__char__);");
 	</CODE>
 </ACTION>
@@ -1060,7 +1027,7 @@
 
 <ACTION NAME="undo">
 	<CODE>
-		buffer.undo();
+		buffer.undo(textArea);
 	</CODE>
 </ACTION>
 
@@ -1068,15 +1035,6 @@
 	<CODE>
 		view.unsplit();
 	</CODE>
-</ACTION>
-
-<ACTION NAME="vfs-browser">
-	<CODE>
-		view.getDockableWindowManager().toggleDockableWindow("vfs.browser");
-	</CODE>
-	<IS_SELECTED>
-		return view.getDockableWindowManager().isDockableWindowVisible("vfs.browser");
-	</IS_SELECTED>
 </ACTION>
 
 <ACTION NAME="view-registers">

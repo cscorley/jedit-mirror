@@ -46,11 +46,12 @@ each have their own license; see the 'Libraries' section below.
 * jEdit on the Internet
 
 The jEdit homepage, located at <http://www.jedit.org> contains the
-latest version of jEdit, along with plugin downloads.
+latest version of jEdit, along with plugin downloads. There is also a
+user-oriented site, <http://community.jedit.org>. Check it out.
 
-There are three mailing lists dedicated to jEdit; for details, visit
+There are several mailing lists dedicated to jEdit; for details, visit
 <http://www.jedit.org/index.php?page=lists>. The mailing lists are the
-preferred place to post feature suggestions.
+preferred place to post feature suggestions, questions, and the like.
 
 If you would like to report a bug, first read the `Common Problems'
 section below. If that doesn't answer your question, report a bug with
@@ -69,6 +70,11 @@ subscribe to one of the BeanShell mailing lists by visiting
 <http://www.beanshell.org/contact.html>.
 
 You may also contact me directly by e-mailing <slava@jedit.org>.
+
+Finally, if you want to chat about jEdit with other users and
+developers, come join the #jedit channel on irc.openprojects.net. You
+can use the IRC plugin, available from http://plugins.jedit.org, for
+this purpose.
 
 * Common problems
 
@@ -120,9 +126,6 @@ actually a Java bug, or a well-known problem:
 - Aborting I/O operations in the I/O Progress Monitor doesn't always
   work.
 
-- Edit modes you write will not be available in the editor until you add
-  an entry to the `catalog' file in the appropriate modes directory.
-
 - The Swing HTML component used by jEdit's help viewer is very buggy.
   Although the jEdit online help works around many of the bugs, it still
   renders some HTML incorrectly and runs very slowly.
@@ -130,6 +133,11 @@ actually a Java bug, or a well-known problem:
 - Because jEdit is written in Java, it will always be slower than a
   native application. For best performance, use a recent Java version,
   such as Java 2 version 1.3.
+
+- On MacOS X, the Java runtime grabs the Apple+Q key combo and
+  immediately quits the VM, without giving the running application a
+  chance to handle the keystroke. Do not use the Apple+Q keyboard
+  shortcut to exit jEdit, or you will lose unsaved changes.
 
 * Problems that occur with older Java versions
 
@@ -144,24 +152,17 @@ actually a Java bug, or a well-known problem:
   from <http://java.sun.com/products/jfc>. Alternatively, upgrade to
   Java 2, which doesn't require you to install Swing separately.
 
-- The following three source files will not compile under Java 1.1:
-
-  bsh/XThis.java
-  bsh/reflect/ReflectManagerImpl.java
-  org/gjt/sp/jedit/textarea/TextRenderer2D.java
-
-  These files use Java 2-specific features, and are only used when
-  running on Java 2. You can safely delete or ignore them if you only
-  plan on running jEdit in Java 1.1.
+- The jEdit source code will not compile under Java 1.1. If you want to
+  compile the source yourself, you must do so under at least Java 2
+  version 1.3, even if you plan on running jEdit under an earlier Java
+  version.
 
 * Libraries
 
 jEdit depends on, and comes bundled with the following libraries:
 
 - gnu.regexp by the Free Software Foundation. jEdit bundles gnu.regexp
-  1.1.3, with the following minor change:
-
-  - REMatch.getSubCount() method added
+  1.1.4.
 
   gnu.regexp is released under the 'GNU Lesser General Public License'.
   The gnu.regexp homepage is <http://www.cacas.org/java/gnu/regexp/>.
@@ -178,7 +179,7 @@ jEdit depends on, and comes bundled with the following libraries:
   The AElfred home page is located at <http://www.microstar.com>.
 
 - BeanShell scripting language, by Pat Niemeyer. jEdit bundles BeanShell
-  version 1.2beta1, with the bsh.util package removed.
+  version 1.2beta2 with the bsh.util package removed.
 
   BeanShell is released under a dual Sun Public License/GNU LGPL
   license. See the BeanShell homepage for details.
@@ -190,72 +191,5 @@ jEdit depends on, and comes bundled with the following libraries:
 
 * Credits
 
-The following people contributed to the jEdit core:
-
-Alwyn Barry:        - Ada95 edit mode
-Andre Kaplan:       - ASP, JavaScript, VBScript, BCEL edit modes
-                    - Syntax token background highlighting
-Artur Biesiadowski: - Eiffel edit mode
-Bruno Tatibouet:    - B formal method edit mode
-Dante Fabrizio:     - VHDL edit mode
-Denis Lambot:       - Selecting files from the keyboard in the file
-                      system browser
-Dirk Moebius:       - HTTP firewall plugin
-                    - Improved shortcuts option pane
-		    - Improved history text fields
-                    - EditorExitRequested message code
-                    - VariableGridLayout code
-                    - Show Free Memory macro
-Dominic Stolerman:  - ML edit mode
-Ed Stewart:         - PV-WAVE edit mode
-Francesc Roses:     - Duplicate Line macro
-Gili Tzabari:       - OS/2 start script
-Ian Maclean:        - Ruby edit mode
-Jason Ginchereau:   - Portions of QuickFile plugin are used in file
-                      system browser
-Jerry McBride:      - NetRexx edit mode
-John Gellene:       - 'Writing macros' section of user's guide
-                    - 'Writing plugins' section of user's guide
-                    - jEditLauncher for Windows
-                    - A large number of sample macros
-                    - ... and more
-Jonathan Revusky:   - Python edit mode
-Juha Lindfors:      - IDL edit mode
-Kris Kopicki:       - Objective C syntax highlighting
-Kristian Ovaska:    - Intel x86 Assembly, Haskell, Pascal edit modes
-Lionel Fiol:        - Omnimark edit mode
-Marc Rummel:        - MIPS R2000 Assembly edit mode
-Matt Albrecht:      - Inform edit mode
-Matt Price:         - Visual Foxpro edit mode
-Matthias Schneider: - AWK, COBOL edit modes
-Michael Jacobson:   - TCL edit mode
-Mike Dillon:        - Syntax highlighting engine ("XMode")
-                    - Gutter
-                    - New options dialog box
-                    - Faster literal search
-                    - ColdFusion, CSS, HTML, Java, JSP, LISP, Patch,
-                      PHP, SHTML, TSQL, XML, XSL edit modes
-                    - http://plugins.jedit.org web master
-                    - ... and more
-Nitsan Vardi:       - VHDL edit mode
-Ollie Rutherfurd:   - C# edit mode
-                    - Default set of XSL abbreviations
-                    - Some commands in View->Scrolling menu
-                    - ... and more
-Patrick Tingen:     - Progress 4GL edit mode
-Peter Graves:       - Code for preserving file permissions on Unix was
-                      taken from Peter's j text editor
-                      (http://www.armedbear.org)
-Ralf Engels:        - PostScript edit mode
-Richard Ashwell:    - SQR edit mode
-Rick Owen:          - PL-SQL edit mode
-Romain Guy:         - POVRay edit mode
-Richard Beton:      - Occam edit mode
-Saimon Moore:       - Velocity edit mode
-Tal Davidson:       - First implementation of syntax highlighting engine
-Tom Locke:          - Reverse search
-Wojciech Stryjewski:- Verilog edit mode
-
-In addition to the above people, I would like to thank the plugin
-developers for their plugins, and the users for their feedback and
-comments.
+The list of credits can now be found in the 'About jEdit' dialog box,
+which can be found in jEdit's Help menu.

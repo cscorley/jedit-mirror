@@ -26,18 +26,18 @@ import org.gjt.sp.jedit.*;
 
 public class MarkerHighlight implements TextAreaHighlight
 {
-	public void init(JEditTextArea textArea, TextAreaHighlight next)
+	public MarkerHighlight(JEditTextArea textArea)
 	{
 		this.textArea = textArea;
-		this.next = next;
 	}
 
 	public void paintHighlight(Graphics gfx, int line, int y)
 	{
-		if(textArea.getBuffer().isLoaded() && highlightEnabled)
+		if(textArea.getBuffer().isLoaded() && highlightEnabled
+			&& line < textArea.getVirtualLineCount())
 		{
 			Buffer buffer = textArea.getBuffer();
-			if(buffer.getMarkerAtLine(buffer.virtualToPhysical(line)) != null)
+			if(buffer.getMarkerAtLine(textArea.virtualToPhysical(line)) != null)
 			{
 				int firstLine = textArea.getFirstLine();
 				line -= firstLine;
@@ -48,9 +48,6 @@ public class MarkerHighlight implements TextAreaHighlight
 					.getWidth(),fm.getHeight());
 			}
 		}
-
-		if(next != null)
-			next.paintHighlight(gfx,line,y);
 	}
 
 	public String getToolTipText(MouseEvent evt)
@@ -59,9 +56,11 @@ public class MarkerHighlight implements TextAreaHighlight
 		{
 			FontMetrics fm = textArea.getPainter().getFontMetrics();
 			int line = textArea.getFirstLine() + evt.getY() / fm.getHeight();
+			if(line >= textArea.getVirtualLineCount())
+				return null;
 
 			Buffer buffer = textArea.getBuffer();
-			Marker marker = buffer.getMarkerAtLine(buffer.virtualToPhysical(line));
+			Marker marker = buffer.getMarkerAtLine(textArea.virtualToPhysical(line));
 			if(marker != null)
 			{
 				char shortcut = marker.getShortcut();
@@ -75,10 +74,7 @@ public class MarkerHighlight implements TextAreaHighlight
 			}
 		}
 
-		if(next != null)
-			return next.getToolTipText(evt);
-		else
-			return null;
+		return null;
 	}
 
 	public Color getMarkerHighlightColor()
@@ -103,7 +99,6 @@ public class MarkerHighlight implements TextAreaHighlight
 
 	// private members
 	private JEditTextArea textArea;
-	private TextAreaHighlight next;
 	private boolean highlightEnabled;
 	private Color markerHighlightColor;
 }

@@ -34,49 +34,32 @@ import org.gjt.sp.util.Log;
  * @version $Id$
  */
 public abstract class EditAction
-// no longer implements ActionListener
 {
 	/**
-	 * @deprecated Create an actions.xml file instead of writing
-	 * EditAction implementations!
+	 * Creates a new edit action with the specified name.
+	 * @param name The action name
 	 */
 	public EditAction(String name)
 	{
-		// The only people who use this constructor are
-		// plugins written for the old action API, so
-		// we can safely assume that 'plugin' should be
-		// true.
-		this(name,true);
-	}
-
-	/**
-	 * Creates a new <code>EditAction</code>.
-	 * @param name The name of the action
-	 * @param plugin True if this is a plugin action
-	 * @since jEdit 3.1pre1
-	 */
-	/* package-private */ EditAction(String name, boolean plugin)
-	{
 		this.name = name;
-		this.plugin = plugin;
 	}
 
 	/**
 	 * Returns the internal name of this action.
 	 */
-	public final String getName()
+	public String getName()
 	{
 		return name;
 	}
 
 	/**
-	 * Returns true if this action was loaded from a plugin, false
-	 * if it was loaded from the core.
-	 * @since jEdit 3.1pre1
+	 * Returns the action's label. The default implementation returns the
+	 * value of the property named by the action's internal name suffixed
+	 * with <code>.label</code>.
 	 */
-	public boolean isPluginAction()
+	public String getLabel()
 	{
-		return plugin;
+		return jEdit.getProperty(name + ".label");
 	}
 
 	/**
@@ -84,47 +67,7 @@ public abstract class EditAction
 	 * @param view The view
 	 * @since jEdit 2.7pre2
 	 */
-	public void invoke(View view)
-	{
-		// default implementation
-		ActionEvent evt = new ActionEvent(view,
-			ActionEvent.ACTION_PERFORMED,
-			null);
-
-		actionPerformed(evt);
-	}
-
-	/**
-	 * @deprecated Create an actions.xml file instead of writing
-	 * EditAction implementations!
-	 */
-	public void actionPerformed(ActionEvent evt) {}
-
-	/**
-	 * @deprecated No longer necessary.
-	 */
-	public static View getView(EventObject evt)
-	{
-		if(evt != null)
-		{
-			Object o = evt.getSource();
-			if(o instanceof Component)
-				return getView((Component)o);
-		}
-		// this shouldn't happen
-		return null;
-	}
-
-	/**
-	 * @deprecated No longer necessary.
-	 */
-	public static Buffer getBuffer(EventObject evt)
-	{
-		View view = getView(evt);
-		if(view != null)
-			return view.getBuffer();
-		return null;
-	}
+	public abstract void invoke(View view);
 
 	/**
 	 * Finds the view parent of the specified component.
@@ -163,14 +106,6 @@ public abstract class EditAction
 	 */
 	public boolean isSelected(View view)
 	{
-		return isSelected((Component)view);
-	}
-
-	/**
-	 * @deprecated Override the form that accepts a view instead
-	 */
-	public boolean isSelected(Component comp)
-	{
 		return false;
 	}
 
@@ -198,11 +133,7 @@ public abstract class EditAction
 	 * Returns the BeanShell code that will replay this action.
 	 * @since jEdit 2.7pre2
 	 */
-	public String getCode()
-	{
-		return "view.getInputHandler().invokeAction("
-			+ "jEdit.getAction(\"" + name + "\"))";
-	}
+	public abstract String getCode();
 
 	public String toString()
 	{
@@ -211,7 +142,6 @@ public abstract class EditAction
 
 	// private members
 	private String name;
-	private boolean plugin;
 
 	/**
 	 * 'Wrap' EditActions in this class to turn them into AWT
@@ -236,8 +166,8 @@ public abstract class EditAction
 		public void actionPerformed(ActionEvent evt)
 		{
 			// Let input handler do recording, repeating, etc
-			EditAction.getView(evt).getInputHandler()
-				.invokeAction(action);
+			EditAction.getView((Component)evt.getSource())
+				.getInputHandler().invokeAction(action);
 		}
 
 		// private members

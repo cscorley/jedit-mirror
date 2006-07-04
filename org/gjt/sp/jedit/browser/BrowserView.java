@@ -261,7 +261,7 @@ public class BrowserView extends JPanel
 	private void showFilePopup(VFS.DirectoryEntry file, Point point)
 	{
 		popup = new BrowserPopupMenu(browser,file);
-		popup.show(tree,point.x+1,point.y+1);
+		GUIUtilities.showPopupMenu(popup,tree,point.x+1,point.y+1);
 	}
 
 	class BrowserJTree extends JTree
@@ -323,13 +323,30 @@ public class BrowserView extends JPanel
 			}
 			else if(evt.getID() == KeyEvent.KEY_TYPED)
 			{
-				typeSelectBuffer.append(evt.getKeyChar());
-				doTypeSelect(typeSelectBuffer.toString());
+				switch(evt.getKeyChar())
+				{
+				case '~':
+					browser.setDirectory(System.getProperty("user.home"));
+					break;
+				case '/':
+					browser.setDirectory("roots:");
+					break;
+				case '-':
+					View view = browser.getView();
+					Buffer buffer = view.getBuffer();
+					browser.setDirectory(buffer.getVFS().getParentOfPath(
+						buffer.getPath()));
+					break;
+				default:
+					typeSelectBuffer.append(evt.getKeyChar());
+					doTypeSelect(typeSelectBuffer.toString());
 
-				timer.stop();
-				timer.setInitialDelay(500);
-				timer.setRepeats(false);
-				timer.start();
+					timer.stop();
+					timer.setInitialDelay(500);
+					timer.setRepeats(false);
+					timer.start();
+					break;
+				}
 			}
 
 			if(!evt.isConsumed())

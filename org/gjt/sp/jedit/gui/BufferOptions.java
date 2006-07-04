@@ -1,5 +1,8 @@
 /*
  * BufferOptions.java - Buffer-specific options dialog
+ * :tabSize=8:indentSize=8:noTabs=false:
+ * :folding=explicit:collapseFolds=1:
+ *
  * Copyright (C) 1999, 2000, 2001 Slava Pestov
  *
  * This program is free software; you can redistribute it and/or
@@ -19,13 +22,16 @@
 
 package org.gjt.sp.jedit.gui;
 
+//{{{ Imports
 import javax.swing.border.EmptyBorder;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.StringTokenizer;
 import org.gjt.sp.jedit.msg.BufferUpdate;
+import org.gjt.sp.jedit.textarea.FoldVisibilityManager;
 import org.gjt.sp.jedit.*;
+//}}}
 
 /**
  * Buffer-specific options dialog.
@@ -34,6 +40,7 @@ import org.gjt.sp.jedit.*;
  */
 public class BufferOptions extends EnhancedDialog
 {
+	//{{{ BufferOptions constructor
 	public BufferOptions(View view, Buffer buffer)
 	{
 		super(view,jEdit.getProperty("buffer-options.title"),true);
@@ -59,10 +66,7 @@ public class BufferOptions extends EnhancedDialog
 		cons.weightx = 0.0f;
 		cons.insets = labelInsets;
 
-		// Edit mode
-		cons.gridx = 0;
-		cons.weightx = 0.0f;
-		cons.insets = labelInsets;
+		//{{{ Edit mode
 		JLabel label = new JLabel(jEdit.getProperty(
 			"buffer-options.mode"),SwingConstants.RIGHT);
 		layout.setConstraints(label,cons);
@@ -87,10 +91,11 @@ public class BufferOptions extends EnhancedDialog
 		mode.addActionListener(actionListener);
 		layout.setConstraints(mode,cons);
 		panel.add(mode);
+		//}}}
 
-		// Tab size
+		//{{{ Tab size
 		cons.gridx = 0;
-		cons.gridy = 1;
+		cons.gridy++;
 		cons.weightx = 0.0f;
 		cons.insets = labelInsets;
 		label = new JLabel(jEdit.getProperty(
@@ -104,14 +109,15 @@ public class BufferOptions extends EnhancedDialog
 		String[] tabSizes = { "2", "4", "8" };
 		tabSize = new JComboBox(tabSizes);
 		tabSize.setEditable(true);
-		tabSize.setSelectedItem(buffer.getProperty("tabSize"));
+		tabSize.setSelectedItem(buffer.getStringProperty("tabSize"));
 		tabSize.addActionListener(actionListener);
 		layout.setConstraints(tabSize,cons);
 		panel.add(tabSize);
+		//}}}
 
-		// Indent size
+		//{{{ Indent size
 		cons.gridx = 0;
-		cons.gridy = 2;
+		cons.gridy++;
 		cons.weightx = 0.0f;
 		cons.insets = labelInsets;
 		label = new JLabel(jEdit.getProperty(
@@ -124,14 +130,15 @@ public class BufferOptions extends EnhancedDialog
 		cons.insets = nullInsets;
 		indentSize = new JComboBox(tabSizes);
 		indentSize.setEditable(true);
-		indentSize.setSelectedItem(buffer.getProperty("indentSize"));
+		indentSize.setSelectedItem(buffer.getStringProperty("indentSize"));
 		indentSize.addActionListener(actionListener);
 		layout.setConstraints(indentSize,cons);
 		panel.add(indentSize);
+		//}}}
 
-		// Max line length
+		//{{{ Max line length
 		cons.gridx = 0;
-		cons.gridy = 3;
+		cons.gridy++;
 		cons.weightx = 0.0f;
 		cons.insets = labelInsets;
 		label = new JLabel(jEdit.getProperty(
@@ -146,14 +153,48 @@ public class BufferOptions extends EnhancedDialog
 		cons.insets = nullInsets;
 		maxLineLen = new JComboBox(lineLengths);
 		maxLineLen.setEditable(true);
-		maxLineLen.setSelectedItem(buffer.getProperty("maxLineLen"));
+		maxLineLen.setSelectedItem(buffer.getStringProperty("maxLineLen"));
 		maxLineLen.addActionListener(actionListener);
 		layout.setConstraints(maxLineLen,cons);
 		panel.add(maxLineLen);
+		//}}}
 
-		// Line separator
+		//{{{ Fold mode
 		cons.gridx = 0;
-		cons.gridy = 4;
+		cons.gridy++;
+		cons.weightx = 0.0f;
+		cons.insets = labelInsets;
+		label = new JLabel(jEdit.getProperty(
+			"options.editing.folding"),SwingConstants.RIGHT);
+		layout.setConstraints(label,cons);
+		panel.add(label);
+
+		String[] foldModes = {
+			"none",
+			"indent",
+			"explicit"
+		};
+
+		cons.gridx = 1;
+		cons.weightx = 1.0f;
+		cons.insets = nullInsets;
+		folding = new JComboBox(foldModes);
+		String foldMode = buffer.getStringProperty("folding");
+
+		if("indent".equals(foldMode))
+			folding.setSelectedIndex(1);
+		else if("explicit".equals(foldMode))
+			folding.setSelectedIndex(2);
+		else
+			folding.setSelectedIndex(0);
+		folding.addActionListener(actionListener);
+		layout.setConstraints(folding,cons);
+		panel.add(folding);
+		//}}}
+
+		//{{{ Line separator
+		cons.gridx = 0;
+		cons.gridy++;
 		cons.weightx = 0.0f;
 		cons.insets = labelInsets;
 		label = new JLabel(jEdit.getProperty("buffer-options.lineSeparator"),
@@ -168,7 +209,7 @@ public class BufferOptions extends EnhancedDialog
 			jEdit.getProperty("lineSep.windows"),
 			jEdit.getProperty("lineSep.mac") };
 		lineSeparator = new JComboBox(lineSeps);
-		String lineSep = (String)buffer.getProperty(Buffer.LINESEP);
+		String lineSep = buffer.getStringProperty(Buffer.LINESEP);
 		if(lineSep == null)
 			lineSep = System.getProperty("line.separator");
 		if("\n".equals(lineSep))
@@ -180,10 +221,11 @@ public class BufferOptions extends EnhancedDialog
 		lineSeparator.addActionListener(actionListener);
 		layout.setConstraints(lineSeparator,cons);
 		panel.add(lineSeparator);
+		//}}}
 
-		// Encoding
+		//{{{ Encoding
 		cons.gridx = 0;
-		cons.gridy = 5;
+		cons.gridy++;
 		cons.weightx = 0.0f;
 		cons.insets = labelInsets;
 		label = new JLabel(jEdit.getProperty("buffer-options.encoding"),
@@ -204,13 +246,29 @@ public class BufferOptions extends EnhancedDialog
 
 		encoding = new JComboBox(encodings);
 		encoding.setEditable(true);
-		encoding.setSelectedItem(buffer.getProperty(Buffer.ENCODING));
+		encoding.setSelectedItem(buffer.getStringProperty(Buffer.ENCODING));
 		layout.setConstraints(encoding,cons);
 		panel.add(encoding);
+		//}}}
 
-		// Syntax highlighting
+		//{{{ Trailing EOL setting
 		cons.gridx = 0;
-		cons.gridy = 6;
+		cons.gridy++;
+		cons.weightx = 0.0f;
+		cons.gridwidth = cons.REMAINDER;
+		cons.fill = GridBagConstraints.NONE;
+		cons.anchor = GridBagConstraints.WEST;
+		trailingEOL = new JCheckBox(jEdit.getProperty(
+			"buffer-options.trailingEOL"));
+		trailingEOL.setSelected(buffer.getBooleanProperty(Buffer.TRAILING_EOL));
+		trailingEOL.addActionListener(actionListener);
+		layout.setConstraints(trailingEOL,cons);
+		panel.add(trailingEOL);
+		//}}}
+
+		//{{{ Syntax highlighting
+		cons.gridx = 0;
+		cons.gridy++;
 		cons.weightx = 0.0f;
 		cons.gridwidth = cons.REMAINDER;
 		cons.fill = GridBagConstraints.NONE;
@@ -221,49 +279,57 @@ public class BufferOptions extends EnhancedDialog
 		syntax.addActionListener(actionListener);
 		layout.setConstraints(syntax,cons);
 		panel.add(syntax);
+		//}}}
 
-		// Indent on tab
-		cons.gridy = 7;
+		//{{{ Indent on tab
+		cons.gridy++;
 		indentOnTab = new JCheckBox(jEdit.getProperty(
 			"options.editing.indentOnTab"));
 		indentOnTab.setSelected(buffer.getBooleanProperty("indentOnTab"));
 		indentOnTab.addActionListener(actionListener);
 		layout.setConstraints(indentOnTab,cons);
 		panel.add(indentOnTab);
+		//}}}
 
-		// Indent on enter
-		cons.gridy = 8;
+		//{{{ Indent on enter
+		cons.gridy++;
 		indentOnEnter = new JCheckBox(jEdit.getProperty(
 			"options.editing.indentOnEnter"));
 		indentOnEnter.setSelected(buffer.getBooleanProperty("indentOnEnter"));
 		indentOnEnter.addActionListener(actionListener);
 		layout.setConstraints(indentOnEnter,cons);
 		panel.add(indentOnEnter);
+		//}}}
 
-		// Soft tabs
-		cons.gridy = 9;
+		//{{{ Soft tabs
+		cons.gridy++;
 		noTabs = new JCheckBox(jEdit.getProperty(
 			"options.editing.noTabs"));
 		noTabs.setSelected(buffer.getBooleanProperty("noTabs"));
 		noTabs.addActionListener(actionListener);
 		layout.setConstraints(noTabs,cons);
 		panel.add(noTabs);
+		//}}}
 
-		// Props label
-		cons.gridy = 10;
+		//{{{ Props label
+		cons.gridy++;
 		cons.insets = new Insets(6,0,6,0);
 		label = new JLabel(jEdit.getProperty("buffer-options.props"));
 		layout.setConstraints(label,cons);
 		panel.add(label);
+		//}}}
 
 		content.add(BorderLayout.NORTH,panel);
 
+		//{{{ Properties text area
 		props = new JTextArea(4,4);
 		props.setLineWrap(true);
 		props.setWrapStyleWord(false);
 		content.add(BorderLayout.CENTER,new JScrollPane(props));
 		updatePropsField();
+		//}}}
 
+		//{{{ Buttons
 		panel = new JPanel();
 		panel.setLayout(new BoxLayout(panel,BoxLayout.X_AXIS));
 		panel.setBorder(new EmptyBorder(12,0,0,0));
@@ -278,18 +344,19 @@ public class BufferOptions extends EnhancedDialog
 		panel.add(cancel);
 		panel.add(Box.createGlue());
 		content.add(BorderLayout.SOUTH,panel);
+		//}}}
 
 		pack();
 		setLocationRelativeTo(view);
 		show();
-	}
+	} //}}}
 
-	// EnhancedDialog implementation
+	//{{{ ok() method
 	public void ok()
 	{
 		try
 		{
-			buffer.putProperty("tabSize",new Integer(
+			buffer.setProperty("tabSize",new Integer(
 				tabSize.getSelectedItem().toString()));
 		}
 		catch(NumberFormatException nf)
@@ -298,7 +365,7 @@ public class BufferOptions extends EnhancedDialog
 
 		try
 		{
-			buffer.putProperty("indentSize",new Integer(
+			buffer.setProperty("indentSize",new Integer(
 				indentSize.getSelectedItem().toString()));
 		}
 		catch(NumberFormatException nf)
@@ -307,7 +374,7 @@ public class BufferOptions extends EnhancedDialog
 
 		try
 		{
-			buffer.putProperty("maxLineLen",new Integer(
+			buffer.setProperty("maxLineLen",new Integer(
 				maxLineLen.getSelectedItem().toString()));
 		}
 		catch(NumberFormatException nf)
@@ -328,77 +395,111 @@ public class BufferOptions extends EnhancedDialog
 		else
 			throw new InternalError();
 
-		String oldLineSep = (String)buffer.getProperty(Buffer.LINESEP);
+		String oldLineSep = buffer.getStringProperty(Buffer.LINESEP);
 		if(oldLineSep == null)
 			oldLineSep = System.getProperty("line.separator");
 		if(!oldLineSep.equals(lineSep))
 		{
-			buffer.putProperty("lineSeparator",lineSep);
+			buffer.setStringProperty("lineSeparator",lineSep);
 			buffer.setDirty(true);
 		}
 
 		String encoding = (String)this.encoding.getSelectedItem();
-		String oldEncoding = (String)buffer.getProperty(Buffer.ENCODING);
+		String oldEncoding = buffer.getStringProperty(Buffer.ENCODING);
 		if(!oldEncoding.equals(encoding))
 		{
-			buffer.putProperty(Buffer.ENCODING,encoding);
+			buffer.setStringProperty(Buffer.ENCODING,encoding);
 			buffer.setDirty(true);
 
 			// XXX this should be moved elsewhere!!!
 			EditBus.send(new BufferUpdate(buffer,view,BufferUpdate.ENCODING_CHANGED));
 		}
 
-		buffer.putBooleanProperty("syntax",syntax.isSelected());
-		buffer.putBooleanProperty("indentOnTab",indentOnTab.isSelected());
-		buffer.putBooleanProperty("indentOnEnter",indentOnEnter.isSelected());
-		buffer.putBooleanProperty("noTabs",noTabs.isSelected());
+		String foldMode = (String)folding.getSelectedItem();
+		String oldFoldMode = buffer.getStringProperty("folding");
+		buffer.setStringProperty("folding",foldMode);
+
+		boolean trailingEOLValue = trailingEOL.isSelected();
+		boolean oldTrailingEOL = buffer.getBooleanProperty(
+			Buffer.TRAILING_EOL);
+		if(trailingEOLValue != oldTrailingEOL)
+		{
+			buffer.setBooleanProperty(Buffer.TRAILING_EOL,trailingEOLValue);
+			buffer.setDirty(true);
+		}
+
+		buffer.setBooleanProperty("syntax",syntax.isSelected());
+		buffer.setBooleanProperty("indentOnTab",indentOnTab.isSelected());
+		buffer.setBooleanProperty("indentOnEnter",indentOnEnter.isSelected());
+		buffer.setBooleanProperty("noTabs",noTabs.isSelected());
 
 		buffer.propertiesChanged();
+		if(!oldFoldMode.equals(foldMode))
+		{
+			FoldVisibilityManager foldVisibilityManager
+				 = view.getTextArea().getFoldVisibilityManager();
+			int collapseFolds = buffer.getIntegerProperty(
+				"collapseFolds",0);
+			if(collapseFolds != 0)
+				foldVisibilityManager.expandFolds(collapseFolds);
+			else
+				foldVisibilityManager.expandAllFolds();
+		}
+
 		dispose();
 
 		// Update text area
 		view.getTextArea().getPainter().repaint();
-	}
+	} //}}}
 
+	//{{{ cancel() method
 	public void cancel()
 	{
 		dispose();
-	}
-	// end EnhancedDialog implementation
+	} //}}}
 
-        // private members
+        //{{{ Private members
+
+	//{{{ Instance variables
 	private View view;
 	private Buffer buffer;
 	private JComboBox tabSize;
 	private JComboBox indentSize;
 	private JComboBox maxLineLen;
+	private JComboBox folding;
 	private Mode[] modes;
 	private JComboBox mode;
 	private JComboBox lineSeparator;
 	private JComboBox encoding;
+	private JCheckBox trailingEOL;
+	private JCheckBox syntax;
 	private JCheckBox indentOnTab;
 	private JCheckBox indentOnEnter;
-	private JCheckBox syntax;
 	private JCheckBox noTabs;
 	private JTextArea props;
 	private JButton ok;
 	private JButton cancel;
+	//}}}
 
+	//{{{ updatePropsField() method
 	private void updatePropsField()
 	{
 		props.setText(":mode=" + modes[mode.getSelectedIndex()].getName()
 			+ ":tabSize=" + tabSize.getSelectedItem()
 			+ ":indentSize=" + indentSize.getSelectedItem()
+			+ ":maxLineLen=" + maxLineLen.getSelectedItem()
+			+ ":trailingEOL=" + trailingEOL.isSelected()
+			+ ":syntax=" + syntax.isSelected()
 			+ ":noTabs=" + noTabs.isSelected()
 			+ ":indentOnTab=" + indentOnTab.isSelected()
 			+ ":indentOnEnter=" + indentOnEnter.isSelected()
-			+ ":syntax=" + syntax.isSelected()
-			+ ":maxLineLen=" + maxLineLen.getSelectedItem()
 			+ ":");
-	}
+	} //}}}
 
+	//{{{ ActionHandler class
 	class ActionHandler implements ActionListener
 	{
+		//{{{ actionPerformed() method
 		public void actionPerformed(ActionEvent evt)
 		{
 			Object source = evt.getSource();
@@ -428,6 +529,8 @@ public class BufferOptions extends EnhancedDialog
 			}
 			else
 				updatePropsField();
-		}
-	}
+		} //}}}
+	} //}}}
+
+	//}}}
 }

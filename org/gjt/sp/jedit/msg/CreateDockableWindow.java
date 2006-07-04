@@ -23,11 +23,8 @@ import org.gjt.sp.jedit.gui.DockableWindow;
 import org.gjt.sp.jedit.*;
 
 /**
- * Message requesting a dockable window to be created.
- * @author Slava Pestov
- * @version $Id$
- *
- * @since jEdit 2.6pre3
+ * @deprecated Use the new dockable window API (with the <code>dockables.xml</code>
+ * file) instead of listening for this message.
  */
 public class CreateDockableWindow extends EBMessage
 {
@@ -101,14 +98,3 @@ public class CreateDockableWindow extends EBMessage
 	private String position;
 	private DockableWindow win;
 }
-
-/*
- * Change Log:
- * $Log$
- * Revision 1.1  2001/09/02 05:37:34  spestov
- * Initial revision
- *
- * Revision 1.1  2000/08/19 08:27:57  sp
- * Forgot to add CreateDockableWindow message
- *
- */

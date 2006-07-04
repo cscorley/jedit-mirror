@@ -685,7 +685,9 @@ public class View extends JFrame implements EBComponent
 
 		setJMenuBar(GUIUtilities.loadMenuBar("view.mbar"));
 
-		toolBars = new Box(BoxLayout.Y_AXIS);
+		toolBars = new JPanel(new VariableGridLayout(
+			VariableGridLayout.FIXED_NUM_COLUMNS,
+			1));
 
 		inputHandler = new DefaultInputHandler(this,(DefaultInputHandler)
 			jEdit.getInputHandler());
@@ -761,7 +763,7 @@ public class View extends JFrame implements EBComponent
 
 	private DockableWindowManager dockableWindowManager;
 
-	private Box toolBars;
+	private JPanel toolBars;
 	private JToolBar toolBar;
 	private SearchBar searchBar;
 
@@ -893,7 +895,6 @@ public class View extends JFrame implements EBComponent
 				toolBars.remove(toolBar);
 
 			toolBar = GUIUtilities.loadToolBar("view.toolbar");
-			toolBar.add(Box.createGlue());
 
 			toolBars.add(toolBar,0);
 			getRootPane().revalidate();
@@ -968,7 +969,6 @@ public class View extends JFrame implements EBComponent
 			status.repaintCaretStatus();
 			status.updateBufferStatus();
 			status.updateMiscStatus();
-			status.updateFoldStatus();
 		}
 	}
 
@@ -1012,16 +1012,8 @@ public class View extends JFrame implements EBComponent
 
 	class WindowHandler extends WindowAdapter
 	{
-		boolean gotFocus;
-
 		public void windowActivated(WindowEvent evt)
 		{
-			if(!gotFocus)
-			{
-				editPane.focusOnTextArea();
-				gotFocus = true;
-			}
-
 			final Vector buffers = new Vector();
 			EditPane[] editPanes = getEditPanes();
 			for(int i = 0; i < editPanes.length; i++)

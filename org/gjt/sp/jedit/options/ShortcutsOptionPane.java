@@ -1,6 +1,7 @@
 /*
  * ShortcutsOptionPane.java - Shortcuts options panel
  * Copyright (C) 1999, 2000, 2001 Slava Pestov
+ * Copyright (C) 2001 Dirk Moebius
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -54,7 +55,7 @@ public class ShortcutsOptionPane extends AbstractOptionPane
 		Box north = Box.createHorizontalBox();
 		north.add(new JLabel(jEdit.getProperty(
 			"options.shortcuts.select.label")));
-		north.add(Box.createHorizontalStrut(12));
+		north.add(Box.createHorizontalStrut(6));
 		north.add(selectModel);
 
 		keyTable = new JTable(currentModel);
@@ -85,24 +86,29 @@ public class ShortcutsOptionPane extends AbstractOptionPane
 	private void initModels()
 	{
 		models = new Vector();
-		models.addElement(currentModel = createModel("commands",false));
-		models.addElement(createModel("plugins",true));
-		models.addElement(createMacrosModel());
+		ActionSet[] actionSets = jEdit.getActionSets();
+		for(int i = 0; i < actionSets.length; i++)
+		{
+			ActionSet actionSet = actionSets[i];
+			if(actionSet.getActionCount() != 0)
+			{
+				models.addElement(createModel(actionSet.getLabel(),
+					actionSet.getActions()));
+			}
+		}
+		currentModel = (ShortcutsModel)models.elementAt(0);
 	}
 
-	private ShortcutsModel createModel(String id, boolean pluginActions)
+	private ShortcutsModel createModel(String modelLabel, EditAction[] actions)
 	{
-		EditAction[] actions = jEdit.getActions();
 		Vector bindings = new Vector(actions.length);
 
 		for(int i = 0; i < actions.length; i++)
 		{
 			EditAction action = actions[i];
-			if(action.isPluginAction() != pluginActions)
-				continue;
 
 			String name = action.getName();
-			String label = jEdit.getProperty(name + ".label");
+			String label = action.getLabel();
 			// Skip certain actions this way (ENTER, TAB)
 			if(label == null)
 				continue;
@@ -111,21 +117,7 @@ public class ShortcutsOptionPane extends AbstractOptionPane
 			addBindings(name,label,bindings);
 		}
 
-		return new ShortcutsModel(id,bindings);
-	}
-
-	private ShortcutsModel createMacrosModel()
-	{
-		Vector bindings = new Vector();
-		Vector macroList = Macros.getMacroList();
-
-		for(int i = 0; i < macroList.size(); i++)
-		{
-			String name = macroList.elementAt(i).toString();
-			addBindings(name,name,bindings);
-		}
-
-		return new ShortcutsModel("macros",bindings);
+		return new ShortcutsModel(modelLabel,bindings);
 	}
 
 	private void addBindings(String name, String label, Vector bindings)
@@ -310,8 +302,7 @@ public class ShortcutsOptionPane extends AbstractOptionPane
 
 		public String toString()
 		{
-			return jEdit.getProperty(
-				"options.shortcuts.select." + name);
+			return name;
 		}
 
 		class KeyCompare implements MiscUtilities.Compare
@@ -334,7 +325,8 @@ public class ShortcutsOptionPane extends AbstractOptionPane
 				String label2 = k2[0].label.toLowerCase();
 
 				if(col == 0)
-					return label1.compareTo(label2);
+					return MiscUtilities.compareStrings(
+						label1,label2,true);
 				else
 				{
 					String shortcut1, shortcut2;
@@ -355,9 +347,9 @@ public class ShortcutsOptionPane extends AbstractOptionPane
 					else if(shortcut2 == null && shortcut1 != null)
 						return -1;
 					else if(shortcut1 == null && shortcut2 == null)
-						return label1.compareTo(label2);
+						return MiscUtilities.compareStrings(label1,label2,true);
 					else
-						return shortcut1.compareTo(shortcut2);
+						return MiscUtilities.compareStrings(shortcut1,shortcut2,true);
 				}
 			}
 		}

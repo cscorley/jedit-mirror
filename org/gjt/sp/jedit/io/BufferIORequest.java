@@ -19,8 +19,6 @@
 
 package org.gjt.sp.jedit.io;
 
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Element;
 import javax.swing.text.Segment;
 import java.io.*;
 import java.util.zip.*;
@@ -49,6 +47,11 @@ public class BufferIORequest extends WorkRequest
 	 * Property loaded data is stored in.
 	 */
 	public static final String LOAD_DATA = "IORequest__loadData";
+
+	/**
+	 * Property line end offsets are stored in.
+	 */
+	public static final String END_OFFSETS = "IORequest__endOffsets";
 
 	/**
 	 * A file load request.
@@ -173,7 +176,7 @@ public class BufferIORequest extends WorkRequest
 					in = new GZIPInputStream(in);
 
 				String lineSeparator = read(buffer,in,length);
-				buffer.putProperty(Buffer.LINESEP,lineSeparator);
+				buffer.setProperty(Buffer.LINESEP,lineSeparator);
 				buffer.setNewFile(false);
 			}
 			catch(CharConversionException ch)
@@ -292,6 +295,8 @@ public class BufferIORequest extends WorkRequest
 	private String read(Buffer buffer, InputStream _in, long length)
 		throws IOException
 	{
+		IntegerArray endOffsets = new IntegerArray();
+
 		// only true if the file size is known
 		boolean trackProgress = (length != 0);
 		File file = buffer.getFile();
@@ -304,7 +309,7 @@ public class BufferIORequest extends WorkRequest
 		if(length == 0)
 			length = IOBUFSIZE;
 
-		StringBuffer sbuf = new StringBuffer((int)length);
+		SegmentBuffer seg = new SegmentBuffer((int)length);
 
 		InputStreamReader in = new InputStreamReader(_in,
 			(String)buffer.getProperty(Buffer.ENCODING));
@@ -362,11 +367,12 @@ public class BufferIORequest extends WorkRequest
 					}
 
 					// Insert a line
-					sbuf.append(buf,lastLine,i -
+					seg.append(buf,lastLine,i -
 						lastLine);
-					sbuf.append('\n');
+					endOffsets.add(seg.count);
+					seg.append('\n');
 					if(trackProgress && lineCount++ % PROGRESS_INTERVAL == 0)
-						setProgressValue(sbuf.length());
+						setProgressValue(seg.count);
 
 					// This is i+1 to take the
 					// trailing \n into account
@@ -399,11 +405,12 @@ public class BufferIORequest extends WorkRequest
 					{
 						CROnly = false;
 						CRLF = false;
-						sbuf.append(buf,lastLine,
+						seg.append(buf,lastLine,
 							i - lastLine);
-						sbuf.append('\n');
+						endOffsets.add(seg.count);
+						seg.append('\n');
 						if(trackProgress && lineCount++ % PROGRESS_INTERVAL == 0)
-							setProgressValue(sbuf.length());
+							setProgressValue(seg.count);
 						lastLine = i + 1;
 					}
 					break;
@@ -424,42 +431,51 @@ public class BufferIORequest extends WorkRequest
 			}
 
 			if(trackProgress)
-				setProgressValue(sbuf.length());
+				setProgressValue(seg.count);
 
 			// Add remaining stuff from buffer
-			sbuf.append(buf,lastLine,len - lastLine);
+			seg.append(buf,lastLine,len - lastLine);
 		}
 
 		setAbortable(false);
 
-		String returnValue;
+		String lineSeparator;
 		if(CRLF)
-			returnValue = "\r\n";
+			lineSeparator = "\r\n";
 		else if(CROnly)
-			returnValue = "\r";
+			lineSeparator = "\r";
 		else
-			returnValue = "\n";
+			lineSeparator = "\n";
 
 		in.close();
 
 		// Chop trailing newline and/or ^Z (if any)
-		int bufferLength = sbuf.length();
+		int bufferLength = seg.count;
 		if(bufferLength != 0)
 		{
-			char ch = sbuf.charAt(bufferLength - 1);
-			if(length >= 2 && ch == 0x1a /* DOS ^Z */
-				&& sbuf.charAt(bufferLength - 2) == '\n')
-				sbuf.setLength(bufferLength - 2);
-			else if(ch == '\n')
-				sbuf.setLength(bufferLength - 1);
+			char ch = seg.array[bufferLength - 1];
+			if(ch == 0x1a /* DOS ^Z */)
+				seg.count--;
+		}
+
+		if(bufferLength != 0)
+		{
+			char ch = seg.array[bufferLength - 1];
+			if(ch == '\n')
+			{
+				buffer.setBooleanProperty(Buffer.TRAILING_EOL,true);
+				seg.count--;
+				endOffsets.setSize(endOffsets.getSize() - 1);
+			}
 		}
 
 		// to avoid having to deal with read/write locks and such,
 		// we insert the loaded data into the buffer in the
 		// post-load cleanup runnable, which runs in the AWT thread.
-		buffer.putProperty(LOAD_DATA,sbuf);
+		buffer.setProperty(LOAD_DATA,seg);
+		buffer.setProperty(END_OFFSETS,endOffsets);
 
-		return returnValue;
+		return lineSeparator;
 	}
 
 	private void readMarkers(Buffer buffer, InputStream _in)
@@ -531,7 +547,7 @@ public class BufferIORequest extends WorkRequest
 				if(buffer.getProperty(Buffer.BACKED_UP) == null)
 				{
 					vfs._backup(session,path,view);
-					buffer.putProperty(Buffer.BACKED_UP,Boolean.TRUE);
+					buffer.setBooleanProperty(Buffer.BACKED_UP,true);
 				}
 
 				if((vfs.getCapabilities() & VFS.RENAME_CAP) != 0)
@@ -553,10 +569,6 @@ public class BufferIORequest extends WorkRequest
 					else
 						vfs._delete(session,markersPath,view);
 				}
-			}
-			catch(BadLocationException bl)
-			{
-				Log.log(Log.ERROR,this,bl);
 			}
 			catch(IOException io)
 			{
@@ -630,10 +642,6 @@ public class BufferIORequest extends WorkRequest
 
 				write(buffer,out);
 			}
-			catch(BadLocationException bl)
-			{
-				Log.log(Log.ERROR,this,bl);
-			}
 			catch(IOException io)
 			{
 				/* Log.log(Log.ERROR,this,io);
@@ -661,7 +669,7 @@ public class BufferIORequest extends WorkRequest
 	}
 
 	private void write(Buffer buffer, OutputStream _out)
-		throws IOException, BadLocationException
+		throws IOException
 	{
 		BufferedWriter out = new BufferedWriter(
 			new OutputStreamWriter(_out,
@@ -671,21 +679,22 @@ public class BufferIORequest extends WorkRequest
 		String newline = (String)buffer.getProperty(Buffer.LINESEP);
 		if(newline == null)
 			newline = System.getProperty("line.separator");
-		Element map = buffer.getDefaultRootElement();
 
-		setProgressMaximum(map.getElementCount() / PROGRESS_INTERVAL);
+		setProgressMaximum(buffer.getLineCount() / PROGRESS_INTERVAL);
 		setProgressValue(0);
 
 		int i = 0;
-		while(i < map.getElementCount())
+		while(i < buffer.getLineCount())
 		{
-			Element line = map.getElement(i);
-			int start = line.getStartOffset();
-			buffer.getText(start,line.getEndOffset() - start - 1,
-				lineSegment);
+			buffer.getLineText(i,lineSegment);
 			out.write(lineSegment.array,lineSegment.offset,
 				lineSegment.count);
-			out.write(newline);
+
+			if(i != buffer.getLineCount() - 1
+				|| buffer.getBooleanProperty(Buffer.TRAILING_EOL))
+			{
+				out.write(newline);
+			}
 
 			if(++i % PROGRESS_INTERVAL == 0)
 				setProgressValue(i / PROGRESS_INTERVAL);

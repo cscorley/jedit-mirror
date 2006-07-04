@@ -22,16 +22,25 @@ package org.gjt.sp.jedit.gui;
 import java.awt.Component;
 
 /**
- * A window that can either be docked inside a view, or float outside it.
- * @author Slava Pestov
- * @version $Id$
- * @since jEdit 2.6pre3
+ * @deprecated There is no need to implement this interface anymore. Just write
+ * a <code>dockables.xml</code> file instead, for example:
+ * <pre>
+ * <?xml version="1.0"?>
+ *
+ * <!DOCTYPE DOCKABLES SYSTEM "dockables.xml">
+ *
+ * <DOCKABLES>
+ *   <DOCKABLE NAME="quicknotepad">
+ *     new QuickNotepad(view);
+ *   </DOCKABLE>
+ * </DOCKABLES>
+ * </pre>
  */
 public interface DockableWindow
 {
 	/**
-	 * Named list storing the names of all known dockable windows.
-	 * @since jEdit 2.6pre3
+	 * @deprecated Write a <code>dockables.xml</code> to add dockable
+	 * windows instead
 	 */
 	String DOCKABLE_WINDOW_LIST = "DOCKABLE_WINDOWS";
 
@@ -49,14 +58,3 @@ public interface DockableWindow
 	 */
 	Component getComponent();
 }
-
-/*
- * Change Log:
- * $Log$
- * Revision 1.1  2001/09/02 05:37:37  spestov
- * Initial revision
- *
- * Revision 1.1  2000/08/13 07:35:24  sp
- * Dockable window API
- *
- */

@@ -105,6 +105,7 @@ public class HistoryTextField extends JTextField
 		else
 			historyModel = HistoryModel.getModel(name);
 		index = -1;
+		repaint();
 	}
 
 	/**
@@ -356,13 +357,11 @@ public class HistoryTextField extends JTextField
 		ActionHandler actionListener = new ActionHandler();
 
 		popup = new JPopupMenu();
-		//JMenuItem caption = new JMenuItem(historyModel.getName()
-		//	+ (text.length() == 0 ? "" : "/" + text));
 		JMenuItem caption = new JMenuItem(jEdit.getProperty(
 			"history.caption"));
 		caption.getModel().setEnabled(false);
-		popup.add(caption);
-		popup.addSeparator();
+ 		popup.add(caption);
+ 		popup.addSeparator();
 
 		for(int i = 0; i < historyModel.getSize(); i++)
 		{
@@ -376,7 +375,7 @@ public class HistoryTextField extends JTextField
 			}
 		}
 
-		popup.show(this,x,y);
+		GUIUtilities.showPopupMenu(popup,this,x,y);
 	}
 
 	class ActionHandler implements ActionListener

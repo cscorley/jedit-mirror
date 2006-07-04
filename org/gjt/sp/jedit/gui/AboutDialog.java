@@ -1,6 +1,6 @@
 /*
  * AboutDialog.java - About jEdit dialog box
- * Copyright (C) 2000 Slava Pestov
+ * Copyright (C) 2000, 2001 Slava Pestov
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -23,6 +23,7 @@ import javax.swing.border.*;
 import javax.swing.*;
 import java.awt.event.*;
 import java.awt.*;
+import java.util.*;
 import org.gjt.sp.jedit.*;
 
 public class AboutDialog extends EnhancedDialog
@@ -32,38 +33,22 @@ public class AboutDialog extends EnhancedDialog
 		super(view,jEdit.getProperty("about.title"),true);
 
 		JPanel content = new JPanel(new BorderLayout());
-		content.setBackground(Color.white);
 		content.setBorder(new EmptyBorder(12,12,12,12));
 		setContentPane(content);
 
-		JPanel panel = new JPanel(new BorderLayout());
-		panel.setBackground(Color.white);
-		String[] args = { jEdit.getVersion() };
-		JLabel label = new JLabel(jEdit.getProperty("about.version",args),
-			SwingConstants.CENTER);
-		label.setBorder(new EmptyBorder(0,0,12,0));
-		panel.add(BorderLayout.NORTH,label);
+		content.add(BorderLayout.CENTER,new AboutPanel());
 
-		JLabel splash = new JLabel(new ImageIcon(getClass().getResource(
-			"/org/gjt/sp/jedit/jedit_logo.gif")));
-		//splash.setBorder(new MatteBorder(1,1,1,1,Color.black));
-		panel.add(BorderLayout.CENTER,splash);
+		JPanel buttonPanel = new JPanel();
+		buttonPanel.setLayout(new BoxLayout(buttonPanel,BoxLayout.X_AXIS));
+		buttonPanel.setBorder(new EmptyBorder(12,0,0,0));
 
-		label = new JLabel(jEdit.getProperty("about.caption"),
-			SwingConstants.CENTER);
-		label.setBorder(new EmptyBorder(12,0,12,0));
-		panel.add(BorderLayout.SOUTH,label);
-
-		content.add(BorderLayout.CENTER,panel);
-
-		Box box = new Box(BoxLayout.X_AXIS);
-		box.add(Box.createGlue());
+		buttonPanel.add(Box.createGlue());
 		close = new JButton(jEdit.getProperty("common.close"));
 		close.addActionListener(new ActionHandler());
 		getRootPane().setDefaultButton(close);
-		box.add(close);
-		box.add(Box.createGlue());
-		content.add(BorderLayout.SOUTH,box);
+		buttonPanel.add(close);
+		buttonPanel.add(Box.createGlue());
+		content.add(BorderLayout.SOUTH,buttonPanel);
 
 		pack();
 		setResizable(false);
@@ -89,6 +74,118 @@ public class AboutDialog extends EnhancedDialog
 		public void actionPerformed(ActionEvent evt)
 		{
 			dispose();
+		}
+	}
+
+	static class AboutPanel extends JComponent
+	{
+		ImageIcon image;
+		Vector text;
+		int scrollPosition;
+		AnimationThread thread;
+
+		AboutPanel()
+		{
+			setFont(UIManager.getFont("Label.font"));
+			setForeground(new Color(206,206,229));
+			image = new ImageIcon(getClass().getResource(
+				"/org/gjt/sp/jedit/icons/about.gif"));
+			setBorder(new MatteBorder(1,1,1,1,Color.black));
+
+			text = new Vector(50);
+			StringTokenizer st = new StringTokenizer(
+				jEdit.getProperty("about.text"),"\n");
+			while(st.hasMoreTokens())
+			{
+				text.addElement(st.nextToken());
+			}
+
+			scrollPosition = -320;
+
+			thread = new AnimationThread();
+		}
+
+		public void paintComponent(Graphics g)
+		{
+			image.paintIcon(this,g,1,1);
+
+			FontMetrics fm = g.getFontMetrics();
+			int height = fm.getHeight();
+			int firstLine = scrollPosition / height;
+
+			int firstLineOffset = height - scrollPosition % height;
+			int lastLine = (scrollPosition + 320) / height - 3;
+
+			int y = 50 + firstLineOffset;
+
+			for(int i = firstLine; i <= lastLine; i++)
+			{
+				if(i >= 0 && i < text.size())
+				{
+					String line = (String)text.elementAt(i);
+					g.drawString(line,130 + (340
+						- fm.stringWidth(line)) / 2,y);
+				}
+				y += fm.getHeight();
+			}
+
+			String[] args = { jEdit.getVersion() };
+			String version = jEdit.getProperty("about.version",args);
+			g.drawString(version,130 + (340 - fm.stringWidth(version)) / 2,
+				370);
+		}
+
+		public Dimension getPreferredSize()
+		{
+			return new Dimension(1 + image.getIconWidth(),
+				1 + image.getIconHeight());
+		}
+
+		public void addNotify()
+		{
+			super.addNotify();
+			thread.start();
+		}
+
+		public void removeNotify()
+		{
+			super.removeNotify();
+			thread.stop();
+		}
+
+		class AnimationThread extends Thread
+		{
+			AnimationThread()
+			{
+				super("About box animation thread");
+				setPriority(Thread.MIN_PRIORITY);
+			}
+
+			public void run()
+			{
+				for(;;)
+				{
+					long start = System.currentTimeMillis();
+
+					scrollPosition++;
+
+					FontMetrics fm = getFontMetrics(getFont());
+					int max = text.size() * fm.getHeight();
+					if(scrollPosition > max)
+						scrollPosition = -300;
+
+					try
+					{
+						Thread.sleep(Math.max(0,50 -
+							(System.currentTimeMillis() - start)));
+					}
+					catch(InterruptedException ie)
+					{
+					}
+
+					repaint();
+				}
+			}
 		}
 	}
 }

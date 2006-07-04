@@ -1,6 +1,6 @@
 /*
  * DockingOptionPane.java - Dockable window options panel
- * Copyright (C) 2000 Slava Pestov
+ * Copyright (C) 2000, 2001 Slava Pestov
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -62,8 +62,8 @@ public class DockingOptionPane extends AbstractOptionPane
 		};
 
 		tabsPos = new JComboBox(positions);
-		tabsPos.setSelectedIndex(Integer.parseInt(jEdit.getProperty(
-			"view.docking.tabsPos")));
+		tabsPos.setSelectedIndex(jEdit.getIntegerProperty(
+			"view.docking.tabsPos",0));
 		addComponent(jEdit.getProperty("options.docking.tabsPos"),tabsPos);
 
 		addComponent(Box.createVerticalStrut(6));
@@ -83,8 +83,8 @@ public class DockingOptionPane extends AbstractOptionPane
 	{
 		jEdit.setBooleanProperty("view.docking.alternateLayout",
 			layout2.isSelected());
-		jEdit.setProperty("view.docking.tabsPos",String.valueOf(
-			tabsPos.getSelectedIndex()));
+		jEdit.setIntegerProperty("view.docking.tabsPos",
+			tabsPos.getSelectedIndex());
 		windowModel.save();
 	}
 
@@ -155,11 +155,23 @@ class WindowTableModel extends AbstractTableModel
 
 	WindowTableModel()
 	{
+		windows = new Vector();
+
+		// old dockable window API compatibility code
 		Object[] list = EditBus.getNamedList(DockableWindow.DOCKABLE_WINDOW_LIST);
-		windows = new Vector(list.length);
-		for(int i = 0; i < list.length; i++)
+		if(list != null)
 		{
-			windows.addElement(new Entry((String)list[i]));
+			for(int i = 0; i < list.length; i++)
+			{
+				windows.addElement(new Entry((String)list[i]));
+			}
+		}
+		// end compatibility code
+
+		String[] dockables = DockableWindowManager.getRegisteredDockableWindows();
+		for(int i = 0; i < dockables.length; i++)
+		{
+			windows.addElement(new Entry(dockables[i]));
 		}
 
 		sort();
@@ -173,7 +185,7 @@ class WindowTableModel extends AbstractTableModel
 
 	public int getColumnCount()
 	{
-		return 3;
+		return 2;
 	}
 
 	public int getRowCount()
@@ -188,8 +200,6 @@ class WindowTableModel extends AbstractTableModel
 		case 0:
 		case 1:
 			return String.class;
-		case 2:
-			return Boolean.class;
 		default:
 			throw new InternalError();
 		}
@@ -204,8 +214,6 @@ class WindowTableModel extends AbstractTableModel
 			return window.title;
 		case 1:
 			return window.dockPosition;
-		case 2:
-			return new Boolean(window.autoOpen);
 		default:
 			throw new InternalError();
 		}
@@ -227,9 +235,6 @@ class WindowTableModel extends AbstractTableModel
 		case 1:
 			window.dockPosition = (String)value;
 			break;
-		case 2:
-			window.autoOpen = ((Boolean)value).booleanValue();
-			break;
 		default:
 			throw new InternalError();
 		}
@@ -245,8 +250,6 @@ class WindowTableModel extends AbstractTableModel
 			return jEdit.getProperty("options.docking.title");
 		case 1:
 			return jEdit.getProperty("options.docking.dockPosition");
-		case 2:
-			return jEdit.getProperty("options.docking.autoOpen");
 		default:
 			throw new InternalError();
 		}
@@ -265,7 +268,6 @@ class WindowTableModel extends AbstractTableModel
 		String name;
 		String title;
 		String dockPosition;
-		boolean autoOpen;
 
 		Entry(String name)
 		{
@@ -277,13 +279,11 @@ class WindowTableModel extends AbstractTableModel
 			dockPosition = jEdit.getProperty(name + ".dock-position");
 			if(dockPosition == null)
 				dockPosition = DockableWindowManager.FLOATING;
-			autoOpen = jEdit.getBooleanProperty(name + ".auto-open");
 		}
 
 		void save()
 		{
 			jEdit.setProperty(name + ".dock-position",dockPosition);
-			jEdit.setBooleanProperty(name + ".auto-open",autoOpen);
 		}
 	}
 
@@ -294,27 +294,8 @@ class WindowTableModel extends AbstractTableModel
 			Entry e1 = (Entry)obj1;
 			Entry e2 = (Entry)obj2;
 
-			return e1.title.compareTo(e2.title);
+			return MiscUtilities.compareStrings(
+				e1.title,e2.title,true);
 		}
 	}
 }
-
-/*
- * Change Log:
- * $Log$
- * Revision 1.1  2001/09/02 05:37:50  spestov
- * Initial revision
- *
- * Revision 1.4  2001/07/24 08:15:44  sp
- * plugin guide updated
- *
- * Revision 1.3  2000/10/30 07:14:04  sp
- * 2.7pre1 branched, GUI improvements
- *
- * Revision 1.2  2000/09/23 03:01:11  sp
- * pre7 yayayay
- *
- * Revision 1.1  2000/08/17 08:04:10  sp
- * Marker loading bug fixed, docking option pane
- *
- */

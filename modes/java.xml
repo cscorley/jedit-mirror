@@ -14,7 +14,6 @@
 		<PROPERTY NAME="commentStart" VALUE="/*" />
 		<PROPERTY NAME="commentEnd" VALUE="*/" />
 		<PROPERTY NAME="lineComment" VALUE="//" />
-		<PROPERTY NAME="noWordSep" VALUE="_" />
 		<PROPERTY NAME="wordBreakChars" VALUE=",+-=&lt;&gt;/?^&amp;*" />
 	</PROPS>
 	<RULES ESCAPE="\" IGNORE_CASE="FALSE" HIGHLIGHT_DIGITS="TRUE">
@@ -164,6 +163,10 @@
 			<BEGIN>&lt;!--</BEGIN>
 			<END>--&gt;</END>
 		</SPAN>
+
+		<!-- Javadoc allows this -->
+		<SEQ TYPE="NULL">&lt;=</SEQ>
+		<SEQ TYPE="NULL">&lt; </SEQ>
 
 		<!-- HTML tags -->
 		<SPAN TYPE="MARKUP" DELEGATE="xml::TAGS">

@@ -208,7 +208,7 @@ public class WorkThreadPool
 	 * Adds a progress listener to this thread pool.
 	 * @param listener The listener
 	 */
-	public final void addProgressListener(WorkThreadProgressListener listener)
+	public void addProgressListener(WorkThreadProgressListener listener)
 	{
 		listenerList.add(WorkThreadProgressListener.class,listener);
 	}
@@ -217,7 +217,7 @@ public class WorkThreadPool
 	 * Removes a progress listener from this thread pool.
 	 * @param listener The listener
 	 */
-	public final void removeProgressListener(WorkThreadProgressListener listener)
+	public void removeProgressListener(WorkThreadProgressListener listener)
 	{
 		listenerList.remove(WorkThreadProgressListener.class,listener);
 	}
@@ -225,6 +225,32 @@ public class WorkThreadPool
 	// package-private members
 	Object lock = new String("Work thread pool request queue lock");
 	Object waitForAllLock = new String("Work thread pool waitForAll() notifier");
+
+	void fireStatusChanged(WorkThread thread)
+	{
+		final Object[] listeners = listenerList.getListenerList();
+		if(listeners.length != 0)
+		{
+			int index = 0;
+			for(int i = 0; i < threads.length; i++)
+			{
+				if(threads[i] == thread)
+				{
+					index = i;
+					break;
+				}
+			}
+
+			for(int i = listeners.length - 2; i >= 0; i--)
+			{
+				if(listeners[i] == WorkThreadProgressListener.class)
+				{
+					((WorkThreadProgressListener)listeners[i+1])
+						.statusUpdate(WorkThreadPool.this,index);
+				}
+			}
+		}
+	}
 
 	void fireProgressChanged(WorkThread thread)
 	{
@@ -241,21 +267,14 @@ public class WorkThreadPool
 				}
 			}
 
-			final int _index = index;
-			SwingUtilities.invokeLater(new Runnable()
+			for(int i = listeners.length - 2; i >= 0; i--)
 			{
-				public void run()
+				if(listeners[i] == WorkThreadProgressListener.class)
 				{
-					for(int i = listeners.length - 2; i >= 0; i--)
-					{
-						if(listeners[i] == WorkThreadProgressListener.class)
-						{
-							((WorkThreadProgressListener)listeners[i+1])
-								.progressUpdate(WorkThreadPool.this,_index);
-						}
-					}
+					((WorkThreadProgressListener)listeners[i+1])
+						.progressUpdate(WorkThreadPool.this,index);
 				}
-			});
+			}
 		}
 	}
 
@@ -413,43 +432,4 @@ public class WorkThreadPool
 			doAWTRequests();
 		}
 	}
-
 }
-
-/*
- * ChangeLog:
- * $Log$
- * Revision 1.1  2001/09/02 05:38:26  spestov
- * Initial revision
- *
- * Revision 1.10  2000/12/06 07:00:41  sp
- * Lotsa bug fixes
- *
- * Revision 1.9  2000/11/21 02:58:04  sp
- * 2.7pre2 finished
- *
- * Revision 1.8  2000/10/15 04:10:35  sp
- * bug fixes
- *
- * Revision 1.7  2000/08/27 02:06:52  sp
- * Filter combo box changed to a text field in VFS browser, passive mode FTP toggle
- *
- * Revision 1.6  2000/08/22 07:25:01  sp
- * Improved abbrevs, bug fixes
- *
- * Revision 1.5  2000/07/26 07:48:46  sp
- * stuff
- *
- * Revision 1.4  2000/07/22 12:37:39  sp
- * WorkThreadPool bug fix, IORequest.load() bug fix, version wound back to 2.6
- *
- * Revision 1.3  2000/07/22 06:22:27  sp
- * I/O progress monitor done
- *
- * Revision 1.2  2000/07/22 03:27:04  sp
- * threaded I/O improved, autosave rewrite started
- *
- * Revision 1.1  2000/07/21 10:23:49  sp
- * Multiple work threads
- *
- */

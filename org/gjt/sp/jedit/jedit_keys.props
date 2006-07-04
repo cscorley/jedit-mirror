@@ -47,13 +47,12 @@ next-buffer.shortcut=C+PAGE_DOWN
 prev-textarea.shortcut=A+PAGE_UP
 next-textarea.shortcut=A+PAGE_DOWN
 
-# C+e
-# Unused e, f, h, n, p, q, x, y
+# C+e C+X
+# Unused: e, f, h, n, p, q, x, y
 copy-append.shortcut=C+e C+a
 search-in-open-buffers.shortcut=C+e C+b
 range-comment.shortcut=C+e C+c
 search-in-directory.shortcut=C+e C+d
-find-selection.shortcut=C+e C+f
 replace-and-find-next.shortcut=C+e C+g
 center-caret.shortcut=C+e C+i
 scroll-to-current-line.shortcut=C+e C+j
@@ -69,13 +68,15 @@ paste-previous.shortcut=C+e C+v
 close-all.shortcut=C+e C+w
 redo.shortcut=C+e C+z
 expand-folds.shortcut=C+e ENTER
+prev-bracket.shortcut=C+e [
+next-bracket.shortcut=C+e ]
 
-docking-top-expanded.shortcut=C+e 1
-docking-bottom-expanded.shortcut=C+e 2
-docking-left-expanded.shortcut=C+e 3
-docking-right-expanded.shortcut=C+e 4
+# C+e X
+# Unused: a b e g h j k m o q t u y z
+collapse-all-folds.shortcut=C+e c
 delete-paragraph.shortcut=C+e d
 format-paragraph.shortcut=C+e f
+invert-selection.shortcut=C+e i
 select-line.shortcut=C+e l
 narrow.shortcut=C+e n
 select-paragraph.shortcut=C+e p
@@ -84,8 +85,6 @@ select-fold.shortcut=C+e s
 insert-literal.shortcut=C+e v
 select-word.shortcut=C+e w
 expand-all-folds.shortcut=C+e x
-prev-bracket.shortcut=C+e [
-next-bracket.shortcut=C+e ]
 
 # C+m
 run-last-macro.shortcut=C+m C+l
@@ -109,10 +108,11 @@ prev-paragraph.shortcut=C+UP
 next-paragraph.shortcut=C+DOWN
 select-prev-paragraph.shortcut=CS+UP
 select-next-paragraph.shortcut=CS+DOWN
-shift-left.shortcut=A+LEFT
-shift-right.shortcut=A+RIGHT
+shift-left.shortcut2=S+TAB
 prev-marker.shortcut=A+UP
 next-marker.shortcut=A+DOWN
+shift-left.shortcut=A+LEFT
+shift-right.shortcut=A+RIGHT
 select-none.shortcut=ESCAPE
 delete-start-line.shortcut=S+BACK_SPACE
 delete-end-line.shortcut=S+DELETE

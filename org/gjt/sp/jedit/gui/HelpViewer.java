@@ -1,5 +1,8 @@
 /*
  * HelpViewer.java - HTML Help viewer
+ * :tabSize=8:indentSize=8:noTabs=false:
+ * :folding=explicit:collapseFolds=1:
+ *
  * Copyright (C) 1999, 2000, 2001 Slava Pestov
  *
  * This program is free software; you can redistribute it and/or
@@ -19,6 +22,7 @@
 
 package org.gjt.sp.jedit.gui;
 
+//{{{ Imports
 import com.microstar.xml.*;
 import javax.swing.*;
 import javax.swing.border.*;
@@ -34,6 +38,7 @@ import java.util.*;
 import org.gjt.sp.jedit.msg.PropertiesChanged;
 import org.gjt.sp.jedit.*;
 import org.gjt.sp.util.Log;
+//}}}
 
 /**
  * jEdit's HTML viewer. It uses a Swing JEditorPane to display the HTML,
@@ -43,23 +48,17 @@ import org.gjt.sp.util.Log;
  */
 public class HelpViewer extends JFrame implements EBComponent
 {
+	//{{{ HelpViewer constructor
 	/**
-	 * @deprecated Create a new HelpViewer instance instead
-	 */
-	public static void gotoURL(URL url)
-	{
-		new HelpViewer(url.toString());
-	}
-
-	/**
-	 * @deprecated Pass a String instead of a URL
+	 * Creates a new help viewer for the specified URL.
+	 * @param url The URL
 	 */
 	public HelpViewer(URL url)
 	{
-		// XXX
 		this(url.toString());
 	}
 
+	//{{{ HelpViewer constructor
 	/**
 	 * Creates a new help viewer for the specified URL.
 	 * @param url The URL
@@ -137,14 +136,17 @@ public class HelpViewer extends JFrame implements EBComponent
 
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
-		setSize(800,400);
+		getRootPane().setPreferredSize(new Dimension(800,500));
+
+		pack();
 		GUIUtilities.loadGeometry(this,"helpviewer");
 
 		EditBus.addToBus(this);
 
 		show();
-	}
+	} //}}}
 
+	//{{{ gotoURL() method
 	/**
 	 * Displays the specified URL in the HTML component.
 	 * @param url The URL
@@ -195,10 +197,6 @@ public class HelpViewer extends JFrame implements EBComponent
 		}
 
 		// select the appropriate tree node.
-		index = url.lastIndexOf("/doc/");
-		if(index != -1)
-			url = url.substring(index + 5);
-
 		DefaultMutableTreeNode node = (DefaultMutableTreeNode)nodes.get(url);
 
 		if(node == null)
@@ -208,22 +206,26 @@ public class HelpViewer extends JFrame implements EBComponent
 		toc.expandPath(path);
 		toc.setSelectionPath(path);
 		toc.scrollPathToVisible(path);
-	}
+	} //}}}
 
+	//{{{ dispose() method
 	public void dispose()
 	{
 		EditBus.removeFromBus(this);
 		GUIUtilities.saveGeometry(this,"helpviewer");
 		super.dispose();
-	}
+	} //}}}
 
+	//{{{ handleMessage() method
 	public void handleMessage(EBMessage msg)
 	{
 		if(msg instanceof PropertiesChanged)
 			SwingUtilities.updateComponentTreeUI(getRootPane());
-	}
+	} //}}}
 
-	// private members
+	//{{{ Private members
+
+	//{{{ Instance variables
 	private JButton back;
 	private JButton forward;
 	private DefaultTreeModel tocModel;
@@ -234,12 +236,14 @@ public class HelpViewer extends JFrame implements EBComponent
 	private JTextField urlField;
 	private String[] history;
 	private int historyPos;
+	//}}}
 
+	//{{{ createTOC() method
 	private void createTOC()
 	{
 		DefaultMutableTreeNode root = new DefaultMutableTreeNode();
 
-		root.add(createNode("welcome.html",
+		root.add(createNode("jeditresource:/doc/welcome.html",
 			jEdit.getProperty("helpviewer.toc.welcome")));
 
 		root.add(createNode("jeditresource:/doc/README.txt",
@@ -290,8 +294,9 @@ public class HelpViewer extends JFrame implements EBComponent
 		root.add(pluginDocs);
 
 		tocModel = new DefaultTreeModel(root);
-	}
+	} //}}}
 
+	//{{{ loadUserGuideTOC() method
 	private void loadUserGuideTOC(DefaultMutableTreeNode root)
 	{
 		URL resource = getClass().getResource("/doc/users-guide/toc.xml");
@@ -320,57 +325,67 @@ public class HelpViewer extends JFrame implements EBComponent
 		{
 			Log.log(Log.ERROR,this,e);
 		}
-	}
+	} //}}}
 
+	//{{{ createNode() method
 	private DefaultMutableTreeNode createNode(String href, String title)
 	{
 		DefaultMutableTreeNode node = new DefaultMutableTreeNode(
 			new HelpNode(href,title),true);
 		nodes.put(href,node);
 		return node;
-	}
+	} //}}}
 
+	//{{{ HelpNode class
 	static class HelpNode
 	{
 		String href, title;
 
+		//{{{ HelpNode constructor
 		HelpNode(String href, String title)
 		{
 			this.href = href;
 			this.title = title;
-		}
+		} //}}}
 
+		//{{{ toString() method
 		public String toString()
 		{
 			return title;
-		}
-	}
+		} //}}}
+	} //}}}
 
+	//{{{ TOCHandler class
 	class TOCHandler extends HandlerBase
 	{
+		//{{{ TOCHandler constructor
 		TOCHandler(DefaultMutableTreeNode root)
 		{
 			nodes = new Stack();
 			node = root;
-		}
+		} //}}}
 
+		//{{{ attribute() method
 		public void attribute(String aname, String value, boolean isSpecified)
 		{
 			if(aname.equals("HREF"))
 				href = value;
-		}
+		} //}}}
 
+		//{{{ charData() method
 		public void charData(char[] c, int off, int len)
 		{
 			if(tag.equals("TITLE"))
 				title = new String(c, off, len);
-		}
+		} //}}}
 
+		//{{{ startElement() method
 		public void startElement(String name)
 		{
 			tag = name;
-		}
+		} //}}}
 
+		//{{{ endElement() method
 		public void endElement(String name)
 		{
 			if(name == null)
@@ -387,25 +402,28 @@ public class HelpViewer extends JFrame implements EBComponent
 			}
 			else if(name.equals("ENTRY"))
 				node = (DefaultMutableTreeNode)nodes.pop();
-		}
-		// end HandlerBase implementation
+		} //}}}
 
-		// private members
+		//{{{ Private members
 		private String tag;
 		private String title;
 		private String href;
 		private DefaultMutableTreeNode node;
 		private Stack nodes;
-	}
+		//}}}
+	} //}}}
 
+	//{{{ TOCTree class
 	class TOCTree extends JTree
 	{
+		//{{{ TOCTree constructor
 		TOCTree(TreeModel model)
 		{
 			super(model);
 			ToolTipManager.sharedInstance().registerComponent(this);
-		}
+		} //}}}
 
+		//{{{ getToolTipText() method
 		public final String getToolTipText(MouseEvent evt)
 		{
 			TreePath path = getPathForLocation(evt.getX(), evt.getY());
@@ -416,8 +434,9 @@ public class HelpViewer extends JFrame implements EBComponent
 					return path.getLastPathComponent().toString();
 			}
 			return null;
-		}
+		} //}}}
 
+		//{{{ getToolTipLocation() method
 		public final Point getToolTipLocation(MouseEvent evt)
 		{
 			TreePath path = getPathForLocation(evt.getX(), evt.getY());
@@ -430,8 +449,9 @@ public class HelpViewer extends JFrame implements EBComponent
 				}
 			}
 			return null;
-		}
+		} //}}}
 
+		//{{{ processMouseEvent() method
 		protected void processMouseEvent(MouseEvent evt)
 		{
 			ToolTipManager ttm = ToolTipManager.sharedInstance();
@@ -477,25 +497,30 @@ public class HelpViewer extends JFrame implements EBComponent
 				super.processMouseEvent(evt);
 				break;
 			}
-		}
+		} //}}}
 
-		// private members
+		//{{{ Private members
 		private int toolTipInitialDelay = -1;
 		private int toolTipReshowDelay = -1;
 
+		//{{{ cellRectIsVisible() method
 		private boolean cellRectIsVisible(Rectangle cellRect)
 		{
 			Rectangle vr = TOCTree.this.getVisibleRect();
 			return vr.contains(cellRect.x,cellRect.y) &&
 				vr.contains(cellRect.x + cellRect.width,
 				cellRect.y + cellRect.height);
-		}
-	}
+		} //}}}
 
+		//}}}
+	} //}}}
+
+	//{{{ TOCCellRenderer class
 	class TOCCellRenderer extends DefaultTreeCellRenderer
 	{
 		EmptyBorder border = new EmptyBorder(1,0,1,1);
 
+		//{{{ getTreeCellRendererComponent() method
 		public Component getTreeCellRendererComponent(JTree tree,
 			Object value, boolean sel, boolean expanded,
 			boolean leaf, int row, boolean focus)
@@ -506,11 +531,13 @@ public class HelpViewer extends JFrame implements EBComponent
 			setBorder(border);
 
 			return this;
-		}
-	}
+		} //}}}
+	} //}}}
 
+	//{{{ ActionHandler class
 	class ActionHandler implements ActionListener
 	{
+		//{{{ actionPerformed() class
 		public void actionPerformed(ActionEvent evt)
 		{
 			Object source = evt.getSource();
@@ -540,11 +567,13 @@ public class HelpViewer extends JFrame implements EBComponent
 					}
 				}
 			}
-		}
-	}
+		} //}}}
+	} //}}}
 
+	//{{{ LinkHandler class
 	class LinkHandler implements HyperlinkListener
 	{
+		//{{{ hyperlinkUpdate() method
 		public void hyperlinkUpdate(HyperlinkEvent evt)
 		{
 			if(evt.getEventType() == HyperlinkEvent.EventType.ACTIVATED)
@@ -568,17 +597,21 @@ public class HelpViewer extends JFrame implements EBComponent
 			else if (evt.getEventType() == HyperlinkEvent.EventType.EXITED) {
 				viewer.setCursor(Cursor.getDefaultCursor());
 			}
-		}
-	}
+		} //}}}
+	} //}}}
 
+	//{{{ KeyHandler class
 	class KeyHandler extends KeyAdapter
 	{
+		//{{{ keyPressed() method
 		public void keyPressed(KeyEvent evt)
 		{
 			if(evt.getKeyCode() == KeyEvent.VK_ENTER)
 			{
 				gotoURL(urlField.getText(),true);
 			}
-		}
-	}
+		} //}}}
+	} //}}}
+
+	//}}}
 }

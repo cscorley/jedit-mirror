@@ -28,14 +28,6 @@
 				  value="true" />
 	</target>
 	
-    <target name="userdocs"
-        description="force rebuild of html users guide">
-        <delete includeemptydirs="true"
-            failonerror="false">
-        <fileset dir="${build.dir}/doc/users-guide" />            
-        </delete>
-        <antcall target="docs-html"/>
-    </target>
 	<target name="clean"
 			depends="init"
 			description="clean up build.dir and dist.dir">
@@ -67,7 +59,6 @@
 			   debug="true"
 			   debuglevel="${build.debuglevel}"
 			   deprecation="true"
-			   encoding="UTF8"
 			   source="${config.target.java.version}"
 			   target="${config.target.java.version}"
 			   compiler="modern">
@@ -236,7 +227,6 @@
 			<srcfileset dir="doc/users-guide" />
 			<targetfileset dir="${doc.output.location}/users-guide" />
 		</dependset>
-        <!-- TODO: This is not correct - it should check if any of the files are changed -->
 		<available property="users-guide.is.up.to.date"
 				   file="${doc.output.location}/users-guide/toc.xml"
 				   type="file" />
@@ -263,7 +253,6 @@
 			   debug="true"
 			   debuglevel="${build.debuglevel}"
 			   deprecation="true"
-			   encoding="UTF8"
 			   source="${config.target.java.version}"
 			   target="${config.target.java.version}"
 			   compiler="modern" />
@@ -271,7 +260,6 @@
 				 destdir="${classes.dir}/javadoc/api"
 				 packagenames="bsh.*,org.*,com.*,gnu.*"
 				 classpath="${classes.dir}/core"
-				 encoding="UTF8"
 				 doclet="doclet.GenerateTocXML"
 				 docletpath="${classes.dir}/javadoc"
 				 version="true"
@@ -428,7 +416,6 @@
 			   debug="true"
 			   debuglevel="${build.debuglevel}"
 			   deprecation="true"
-			   encoding="UTF8"
 			   source="${config.target.java.version}"
 			   target="${config.target.java.version}"
 			   compiler="modern" />
@@ -532,7 +519,11 @@
 				<include name="jedit.1" />
 			</fileset>
 			<zipfileset dir="${dist.dir}"
-						includes="*.tar.bz2"
+						includes="jedit-api.tar.bz2
+						          jedit-mac.tar.bz2
+						          jedit-macros.tar.bz2
+						          jedit-os2.tar.bz2
+						          jedit-program.tar.bz2"
 						prefix="installer" />
 		</jar>
 		<condition property="wipe.dist.files">
@@ -581,6 +572,7 @@
 						to="jEdit/*"
 						handledirsep="true" />
 		</pathconvert>
+		<mkdir dir="${dist.dir}" />
 		<tar destfile="${dist.dir}/${config.src.archive.filename}"
 			 basedir=".."
 			 includes="jEdit/**"
@@ -601,7 +593,6 @@
 			   debug="true"
 			   debuglevel="${build.debuglevel}"
 			   deprecation="true"
-			   encoding="UTF8"
 			   source="${config.target.java.version}"
 			   target="${config.target.java.version}"
 			   compiler="modern" />
@@ -873,7 +864,6 @@
 			   debug="true"
 			   debuglevel="${build.debuglevel}"
 			   deprecation="true"
-			   encoding="UTF8"
 			   source="${config.target.java.version}"
 			   target="${config.target.java.version}"
 			   compiler="modern" />
@@ -891,7 +881,6 @@
 			   debug="true"
 			   debuglevel="${build.debuglevel}"
 			   deprecation="true"
-			   encoding="UTF8"
 			   source="${config.target.java.version}"
 			   target="${config.target.java.version}"
 			   compiler="modern" />

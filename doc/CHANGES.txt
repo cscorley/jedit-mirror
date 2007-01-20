@@ -3,14 +3,18 @@ JEDIT 4.3 VERSION HISTORY
 {{{ Version 4.3pre9
 
 Thanks to Björn "Vampire" Kautler, Akber Choudhry, Matthieu Casanova
-Jean-Francois Larvoire, Martin Raspe, Kazutoshi Satoda, and Marcelo Vanzin
-for contributing to this release.
+Jean-Francois Larvoire, Martin Raspe, Kazutoshi Satoda, Alan Ezust, Marcelo
+Vanzin, and Nicholas O'Leary for contributing to this release.
 
 {{{ Bug Fixes
+
+- avoid NPE from getIndentRules (patch # 1611766) (Kazutoshi Satoda)
 
 - bufferio operations are now exception-safe (patch# 1597168) (Kazutoshi Satoda)
 
 - Encoding errors properly reported on save (patch# 1601830) (Kazutoshi Satoda)
+
+- Filter Box lose focus bug (patch # 1608948) (kuljc)
 
 - Fixed the broken quick copy behaviour (Björn "Vampire" Kautler)
 
@@ -60,7 +64,7 @@ for contributing to this release.
 - Fixed another bug with the new HASH_CHAR handling
   (bug #1600401) (Björn "Vampire" Kautler)
 
-- Fixed precedence of Recent Files List caretposition over commanline
+- Fixed precedence of Recent Files List caretposition over commandline
   supplied caret position (Björn "Vampire" Kautler)
 
 - SearchMatcher in SearchAndReplace cannot match empty Strings anymore
@@ -83,12 +87,44 @@ for contributing to this release.
 - When simplified keyboard handling was off, typing Alt+F o to open
   a file, the o was also written in the textarea. (#1593359) (Matthieu Casanova)
 
+- VariableGridLayout resized Components to sizes bigger than their maximum size,
+  now it resizes it only up to its maximum size and positions the Components
+  according to their alignmentX/alignmentY values if the cell is bigger than
+  the Component's size. (Björn "Vampire" Kautler)
+
+- Horizontal scrollbar in the textarea was not always updated
+  (#1534016, #1617483) (Matthieu Casanova)
+
+- In hypersearch when switching to flat nodes, the full path is displayed
+  correctly (#1593523) (Matthieu Casanova)
+
+- The VFS Browser filter was not working as expected
+  (#1617509) (Matthieu Casanova)
+
+- When reloading a buffer, the markers were not saved for each EditPanes
+  (Matthieu Casanova)
+
+- When closing an untitled buffer is is removed from the CaretInfo map
+  of the EditPanes (Matthieu Casanova)
+
+- When a buffer is renamed the key is changed in the CaretInfo map
+  of the EditPanes (Matthieu Casanova)
+
+- Memory tooltip in status bar reports wrong values (#1538051) (Matthieu Casanova)
+
+- Better handling of plugin optional dependencies (Matthieu Casanova)
+
+- Fixed some cursor changes when dragging the dockable panel split bar
+  (Matthieu Casanova)
 }}}
+
 {{{ Editing
 
 - New edit mode: quake.xml
 
 - Updated TCL edit mode (Jean-Francois Larvoire)
+
+- Updated Lilypond edit mode (Bertalan Fodor)
 
 - Fixed some invalid mode files (Björn "Vampire" Kautler)
 
@@ -97,8 +133,17 @@ for contributing to this release.
 - Perl edit mode - support for fully qualified variable names like $Some::Module::test.
   (Martin Raspe)
 
+- Updated python edit mode to unindent lines after "pass" (Matthieu Casanova)
+
+- Better highlighting of function calls in makefiles. (Marcelo Vanzin)
 }}}
 {{{ Miscellaneous
+
+- BufferSwitcher has a hovertip to give you full filename
+  (request # 1628053) (Alan Ezust)
+
+- Textfield for filtering recent files menu (Patch # 1546200)
+  (Joerg - spj)
 
 - FSB deletes directories recursively now
   (bug #1593389) (patch #1593900) (Akber Choudhry)
@@ -132,6 +177,41 @@ for contributing to this release.
 - The Files change dialog has now an ignore button to set the
   autoreload and autoreloaddialog flags to false (Matthieu Casanova)
 
+- VariableGridLayout, two new capabilities: it can
+  take minimum and maximum sizes of a Component into account when
+  distributing free space and you can supply distances to the borders
+  of the Container. The new capabilites are useable by the two new
+  constructors. For more information, see the JavaDoc documentation.
+  (Björn "Vampire" Kautler)
+
+- Reload/ReloadAll now ignores buffers with the NEW_FILE flag set. This
+  was causing IO error messages when the Untitled buffers could not
+  be reloaded. (Nicholas O'Leary)
+
+- More infos about the socket connection when the plugin manager updates it's
+  plugin list (Matthieu Casanova)
+
+- Now the multiple selection and rectangular selection flags are saved
+  for each buffer on each edit pane. So you can now in a textarea edit
+  a buffer using rectangular selection, and use normal selection with another one
+   (Matthieu Casanova)
+
+- Option panes are now in a JSCrollPane (feature #1593735) (Matthieu Casanova)
+
+- New option for the File System Manager : use default icons.
+  If you uncheck the checkbox, some customs icons can be used.
+  At this time only local file system have custom icons (feature #1593464)
+  (Matthieu Casanova)
+
+- Buffer saving is now buffered, it changes everything with large files
+  (Matthieu Casanova)
+
+- jEdit can now use continuous layout in it's JSplitPane.
+  You can change this option in the Appearance panel (#1638642)
+  (Matthieu Casanova)
+
+- The update panel of the plugin manager now shows the installed version
+  and the version existing on the plugin central server (Matthieu Casanova)
 }}}
 {{{ API Changes
 
@@ -149,11 +229,46 @@ for contributing to this release.
   whole Strings. Additionally new ones for accepting HASH_CHARS got
   added. (Björn "Vampire" Kautler)
 
-- GUIUtilities has a new method makeCompactGrid() to help building
-  nice GUIs with SpringLayout. (Björn "Vampire" Kautler)
-
 - SearchDialog.preloadSearchDialog(View) is deprecated, this is
   not necessary on our big computers and JVM with JIT (Matthieu Casanova)
+
+- VariableGridLayout has two new constructors to use the new capabilites.
+  For more information see section Miscellaneous. (Björn "Vampire" Kautler)
+
+- PluginManager.getPluginList() is not public anymore. It was not useful
+  since the PluginList class cannot be accessed outside of it's package
+  (Matthieu Casanova)
+
+- MiscUtilities.moveFile(File, File) is deprecated, use
+  IOUtilities.moveFile(File, File) instead (Matthieu Casanova)
+
+- Plugin API : now the EditPlugin has two new methods :
+  EditPlugin.getPluginHome() that will returns the path where the plugin
+  should write it's data (it can return null if you run with nosettings).
+  It is a folder build like that
+  jEditSettingsDirectory/plugins/pluginClassName
+  ex :
+  ~/.jedit/plugins/sidekick.SidekickPlugin
+  I hope this will help to make some cleanup in the jEdit settings directory folder
+  (this folder is not created by jEdit, plugin developpers must create it themselves)
+  The second method is EditPlugin.usePluginHome()
+  that plugin developpers should overload to tell jEdit if they use this new folder
+  The default is false (Matthieu Casanova)
+
+- VFSFile.getIcon() and VFSFile.getDefaultIcon(). The getIcon() method
+  can be override to use a custom icon for some VFS (Matthieu Casanova)
+
+- Added org.gjt.sp.jedit.msg.PropertiesChanging; an EditBus message that is
+  sent right before the global options dialog is show, to allow plugins to
+  flush any data that might be used by the option panes.
+  (Marcelo Vanzin)
+
+- OptionsDialog.init(String,String) was made protected (was private).
+  (Marcelo Vanzin)
+
+- New GUIUtilities.initContinuousLayout(JSplitPane) method that will
+  init the JSplitPane with the appearance.continuousLayout property.
+  It can be used by plugins that has JSplitPane when receiving a PropertiesChanged
 }}}
 
 }}}
@@ -211,7 +326,7 @@ and Björn "Vampire" Kautler for contributing to this release.
 - ToggleHeaderSource.bsh (macros/C) now will find and open an already-open
   buffer with the correct filename even if it is from another directory.
   (Alan Ezust)
-  
+
 }}}
 {{{ API Changes
 
@@ -279,9 +394,6 @@ and Björn "Vampire" Kautler for contributing to this release.
   Setting or deleting markers does not dirty buffer anymore. Handling of
   the markers file is now factored out from BufferSaveRequest.
   (Martin Raspe)
-
-- added new class org.gjt.sp.jedit.io.VFSFileFilter; an interface that
-  defines a filter used by the VFS browser. (Marcelo Vanzin)
 
 - added SearchMatcher.isMatchingEOL(); indicates whether the matched
   region ends at an EOL character. Part of bug fix for SF Bug #1541009.
@@ -1295,5 +1407,5 @@ Nicholas O'Leary and Trevor Harmon for contributing to this release.
 }}}
 
 jEdit buffer local properties:
-:maxLineLen=0:indentSize=2:
+:maxLineLen=80:indentSize=2:
 :folding=explicit:collapseFolds=2:

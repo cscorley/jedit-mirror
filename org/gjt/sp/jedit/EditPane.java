@@ -108,6 +108,7 @@ public class EditPane extends JPanel implements EBComponent
 	 */
 	public void setBuffer(final Buffer buffer, boolean requestFocus)
 	{
+
 		if(buffer == null)
 			throw new NullPointerException();
 
@@ -123,7 +124,7 @@ public class EditPane extends JPanel implements EBComponent
 		this.buffer = buffer;
 
 		textArea.setBuffer(buffer);
-
+		    
 		if(!init)
 		{
 			view.updateTitle();
@@ -132,6 +133,7 @@ public class EditPane extends JPanel implements EBComponent
 			{
 				if(bufferSwitcher.getSelectedItem() != buffer)
 					bufferSwitcher.setSelectedItem(buffer);
+				bufferSwitcher.setToolTipText(buffer.getPath());				
 			}
 
 			EditBus.send(new EditPaneUpdate(this,EditPaneUpdate
@@ -305,6 +307,9 @@ public class EditPane extends JPanel implements EBComponent
 		buffer.setProperty(Buffer.SELECTION,selection);
 		caretInfo.selection = selection;
 
+		caretInfo.rectangularSelection = textArea.isRectangularSelectionEnabled();
+		caretInfo.multipleSelection = textArea.isMultipleSelectionEnabled();
+
 		buffer.setIntegerProperty(Buffer.SCROLL_VERT,
 			textArea.getFirstPhysicalLine());
 		caretInfo.scrollVert = textArea.getFirstPhysicalLine();
@@ -330,13 +335,15 @@ public class EditPane extends JPanel implements EBComponent
 	{
 		// get our internal map of buffer -> CaretInfo since there might
 		// be current info already
-		Map<String, CaretInfo> carets = (Map<String, CaretInfo>)getClientProperty(CARETS);
-		if ( carets == null ) {
+		Map<String, CaretInfo> carets = (Map<String, CaretInfo>) getClientProperty(CARETS);
+		if (carets == null)
+		{
 			carets = new HashMap<String, CaretInfo>();
 			putClientProperty(CARETS, carets);
 		}
 		CaretInfo caretInfo = carets.get(buffer.getPath());
-		if ( caretInfo == null ) {
+		if (caretInfo == null)
+		{
 			caretInfo = new CaretInfo();	
 		}
 		
@@ -346,7 +353,7 @@ public class EditPane extends JPanel implements EBComponent
 		// previously saved caret position that was stored in the 
 		// buffer properties.
 		int caret = caretInfo.caret;
-		if ((caret == -1) || buffer.getBooleanProperty(Buffer.CARET_POSITIONED))
+		if (caret == -1 || buffer.getBooleanProperty(Buffer.CARET_POSITIONED))
 		{
 			Integer i = (Integer) buffer.getProperty(Buffer.CARET);
 			caret = i == null ? -1 : i;
@@ -374,7 +381,8 @@ public class EditPane extends JPanel implements EBComponent
 			}
 		}
 		textArea.setSelection(selection);
-
+		textArea.setRectangularSelectionEnabled(caretInfo.rectangularSelection);
+		textArea.setMultipleSelectionEnabled(caretInfo.multipleSelection);
 		// set firstLine value
 		int firstLine = caretInfo.scrollVert;
 		if ( firstLine == -1 )
@@ -410,7 +418,24 @@ public class EditPane extends JPanel implements EBComponent
 		 * message altogether. */
 		view.getStatus().setMessage(null);
 	} //}}}
-	
+
+	//{{{ bufferRenamed() method
+	/**
+	 * This method should be called by the Buffer when the path is changing.
+	 * @param oldPath the old path of the buffer
+	 * @param newPath the new path of the buffer
+	 */
+	void bufferRenamed(String oldPath, String newPath)
+	{
+		Map<String, CaretInfo> carets = (Map<String, CaretInfo>) getClientProperty(CARETS);
+		if (carets == null)
+			return;
+		CaretInfo caretInfo = carets.remove(oldPath);
+		if (caretInfo != null)
+			carets.put(newPath, caretInfo);
+
+	} //}}}
+
 	//{{{
 	/**
 	 * Need to track this info for each buffer that this EditPane might edit
@@ -424,6 +449,8 @@ public class EditPane extends JPanel implements EBComponent
 		public Selection[] selection;
 		public int scrollVert = -1;
 		public int scrollHoriz = -1;
+		public boolean rectangularSelection;
+		public boolean multipleSelection;
 	} //}}}
 
 	//{{{ goToNextMarker() method
@@ -665,9 +692,9 @@ public class EditPane extends JPanel implements EBComponent
 	private BufferSwitcher bufferSwitcher;
 	/** The textArea inside the edit pane. */
 	private final JEditTextArea textArea;
-	private MarkerHighlight markerHighlight;
+	private final MarkerHighlight markerHighlight;
 
-	public static final String CARETS = "Buffer->caret";
+	private static final String CARETS = "Buffer->caret";
 	
 	//}}}
 
@@ -871,6 +898,15 @@ public class EditPane extends JPanel implements EBComponent
 			}
 			else if(_buffer == recentBuffer)
 				recentBuffer = null;
+
+			Buffer closedBuffer = msg.getBuffer();
+			if (closedBuffer.isUntitled())
+			{
+				// the buffer was a new file so I do not need to keep it's informations
+				Map<String, CaretInfo> carets = (Map<String, CaretInfo>) getClientProperty(CARETS);
+				if (carets != null)
+					carets.remove(closedBuffer.getPath());
+			}
 		}
 		else if(msg.getWhat() == BufferUpdate.LOAD_STARTED)
 		{

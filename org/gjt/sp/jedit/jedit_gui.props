@@ -206,6 +206,7 @@ exit.label=E$xit
 #{{{ Recent Files menu
 recent-files.code=new RecentFilesProvider();
 recent-files.label=Recent $Files
+recent-files.textfield.tooltip=a filter prefix can be entered here
 no-recent-files.label=No Recent Files
 clear-recent-files.label=Clear Recent Files
 #}}}
@@ -1666,6 +1667,7 @@ options.appearance.textColors=Use jEdit text area colors in all text \
 	components
 options.appearance.decorateFrames=Draw window borders using Swing look & feel
 options.appearance.decorateDialogs=Draw dialog box borders using Swing look & feel
+options.appearance.continuousLayout.label=Use continuous layout in split panes
 #}}}
 
 #{{{ Context Menu pane
@@ -1978,6 +1980,7 @@ options.browser.general.sortMixFilesAndDirs=Mix files and directories
 options.browser.general.doubleClickClose=Double-clicking an open file closes it
 options.browser.general.currentBufferFilter=Filter in file dialogs is \
 	current buffer extension
+options.browser.general.useDefaultIcons=Use default icons
 #}}}
 
 #{{{ Font selector
@@ -2259,6 +2262,7 @@ plugin-manager.status.loaded=Loaded
 plugin-manager.status.not-loaded=Not loaded
 plugin-manager.status.error=Error
 
+plugin-manager.list-download-connect=Connecting to plugins.jedit.org
 plugin-manager.list-download=Downloading plugin list from plugins.jedit.org
 
 #{{{ Error while loading plugin list

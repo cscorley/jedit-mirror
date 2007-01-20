@@ -54,7 +54,7 @@ class InstallPanel extends JPanel
 		setBorder(new EmptyBorder(12,12,12,12));
 
 		final JSplitPane split = new JSplitPane(
-			JSplitPane.VERTICAL_SPLIT,true);
+			JSplitPane.VERTICAL_SPLIT, jEdit.getBooleanProperty("appearance.continuousLayout"));
 
 		/* Setup the table */
 		table = new JTable(pluginModel = new PluginTableModel());
@@ -168,7 +168,7 @@ class InstallPanel extends JPanel
 		df.setMinimumFractionDigits(0);
 		String sizeText;
 		if (size < 1048576)
-			sizeText = size/1024 + "KB";
+			sizeText = (size >> 10) + "KB";
 		else
 			sizeText = df.format(size/ 1048576.0d) + "MB";
 		return sizeText;
@@ -259,6 +259,8 @@ class InstallPanel extends JPanel
 					case 2:
 						return entry.set;
 					case 3:
+						if (updates)
+							return entry.installedVersion + "->" + entry.version;
 						return entry.version;
 					case 4:
 						return formatSize(entry.size);
@@ -415,12 +417,10 @@ class InstallPanel extends JPanel
 
 			for(int i = 0; i < pluginList.pluginSets.size(); i++)
 			{
-				PluginList.PluginSet set = (PluginList.PluginSet)
-					pluginList.pluginSets.get(i);
+				PluginList.PluginSet set = pluginList.pluginSets.get(i);
 				for(int j = 0; j < set.plugins.size(); j++)
 				{
-					PluginList.Plugin plugin = (PluginList.Plugin)
-						pluginList.pluginHash.get(set.plugins.get(j));
+					PluginList.Plugin plugin = pluginList.pluginHash.get(set.plugins.get(j));
 					PluginList.Branch branch = plugin.getCompatibleBranch();
 					String installedVersion =
 						plugin.getInstalledVersion();
@@ -514,7 +514,7 @@ class InstallPanel extends JPanel
 	//{{{ Entry class
 	class Entry
 	{
-		String name, version, author, date, description, set;
+		String name, installedVersion, version, author, date, description, set;
 		int size;
 		boolean install;
 		PluginList.Plugin plugin;
@@ -528,6 +528,7 @@ class InstallPanel extends JPanel
 
 			this.name = plugin.name;
 			this.author = plugin.author;
+			this.installedVersion = plugin.getInstalledVersion();
 			this.version = branch.version;
 			this.size = size;
 			this.date = branch.date;

@@ -127,6 +127,8 @@ public class Buffer extends JEditBuffer
 	 */
 	public void reload(View view)
 	{
+		if (getFlag(NEW_FILE))
+			return;
 		if(isDirty())
 		{
 			String[] args = { path };
@@ -136,8 +138,9 @@ public class Buffer extends JEditBuffer
 			if(result != JOptionPane.YES_OPTION)
 				return;
 		}
-
-		view.getEditPane().saveCaretInfo();
+		EditPane[] editPanes = view.getEditPanes();
+		for (int i = 0; i < editPanes.length; i++)
+			editPanes[i].saveCaretInfo();
 		load(view,true);
 	} //}}}
 
@@ -446,7 +449,7 @@ public class Buffer extends JEditBuffer
 						savePath = vfs.getTwoStageSaveName(savePath);
 						if (savePath == null)
 						{
-							Log.log(Log.DEBUG, this, "Buffer saving : two stage save impossible in path " + savePath);
+							Log.log(Log.DEBUG, this, "Buffer saving : two stage save impossible because path is null");
 							VFSManager.error(view,
 								newPath,
 								"ioerror.save-readonly-twostagefail",
@@ -1451,7 +1454,7 @@ public class Buffer extends JEditBuffer
 		if(!markersChanged())
 			return true;
 		// adapted from VFS.save
-		VFS vfs = VFSManager.getVFSForPath(this.getPath());
+		VFS vfs = VFSManager.getVFSForPath(getPath());
 		if ((vfs.getCapabilities() & VFS.WRITE_CAP) == 0) {
 			VFSManager.error(view, path, "vfs.not-supported.save",
 				new String[] { "markers file" });
@@ -1668,7 +1671,7 @@ public class Buffer extends JEditBuffer
 	private long modTime;
 	private Mode mode;
 
-	private Vector<Marker> markers;
+	private final Vector<Marker> markers;
 
 	private Socket waitSocket;
 	//}}}
@@ -1676,6 +1679,15 @@ public class Buffer extends JEditBuffer
 	//{{{ setPath() method
 	private void setPath(String path)
 	{
+		View[] views = jEdit.getViews();
+		for (int i = 0; i < views.length; i++)
+		{
+			View view = views[i];
+			EditPane[] editPanes = view.getEditPanes();
+			for (int j = 0; j < editPanes.length; j++)
+				editPanes[j].bufferRenamed(this.path, path);
+		}
+
 		this.path = path;
 		VFS vfs = VFSManager.getVFSForPath(path);
 		if((vfs.getCapabilities() & VFS.WRITE_CAP) == 0)

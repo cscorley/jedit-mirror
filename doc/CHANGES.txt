@@ -11,11 +11,16 @@ Marcelo Vanzin, Jesse Pavel, Bernhard Walle and Jakub Roztočil for
 contributing to this release.
 
 {{{ Bug fixes
+
 - Fixed an exception when trying to add new menu items to the context menu
   if some ActionSets have been unloaded (plugin deactivation)
   (Matthieu Casanova #3071355)
 
 - Closes menus when toggling dockables. (#3022084 - Anshal Shukla)
+
+- VFSBrowser escape handling fixed when used as a dialog (#3101808 - Alan Ezust)
+
+- Context menu sorted when adding toolbar buttons (#3074164 - Alan Ezust)
 
 - Fixed an exception when clicking ok while adding new action to the context
   menu if no action has been selected (Matthieu Casanova #3072546)
@@ -120,8 +125,10 @@ contributing to this release.
   (Sf.net bug #1510651 - Shlomy Reinstein)
 
 - Show search bar in full screen mode. (Sf.net bug #2944752 - Shlomy Reinstein)
+
 }}}
 {{{ API changes
+
 - Added methods to manage the cursor if the TextArea :
   In the TextAreaPainter class, added
   resetCursor()
@@ -134,12 +141,12 @@ contributing to this release.
   TEXT_CURSOR until resetCursor() is called (Matthieu Casanova)
 
 - Introduction of a new ThreadUtilities class implementing a
-    threadpool using Java 1.6 Concurrent API. Use this instead of
-    VFSManager's WorkThreadPool, which is now deprecated.
-    Related: A new Task Monitor dockable which will eventually replace
-    the I/O progress monitor, for showing progress of tasks.
-    Still TODO: rewrite VFSManager + all plugins to use ThreadUtilities
-    instead of WorkThreadPool. (Matthieu Casanova)
+  threadpool using Java 1.6 Concurrent API. Use this instead of
+  VFSManager's WorkThreadPool, which is now deprecated.
+  Related: A new Task Monitor dockable which will eventually replace
+  the I/O progress monitor, for showing progress of tasks.
+  Still TODO: rewrite VFSManager + all plugins to use ThreadUtilities
+  instead of WorkThreadPool. (Matthieu Casanova)
 
 - Made method TextUtilities.getCharType() public (Matthieu Casanova)
 
@@ -211,6 +218,9 @@ contributing to this release.
 
 - Update for Stata-edit mode (goebbe, # 3019042)
 
+- Added "using" keyword to haXe edit mode (patch #3081482 from Bad Sector,
+  Matthieu Casanova)
+
 - Added visualbasic.xml edit mode (Anonymous submitter, #3031412)
 
 - Added haxe.xml and hxml mode files to support haXe language
@@ -278,6 +288,46 @@ contributing to this release.
 
 }}}
 {{{ Miscellaneous
+
+- Fixed the build.xml which was for the Windows installer only working if
+  completely run on Windows, making "ant dist-win" on another system and then
+  using "ant dist-win-finish" was broken (Björn "Vampire" Kautler)
+
+- Made the Windows launcher buildable on any system (Björn "Vampire" Kautler)
+
+- Made the Windows installer buildable completely via wine on on non-Windows
+  systems (Björn "Vampire" Kautler)
+
+- Made our documentation build on FOP 0.93+, 0.20.5 is no longer supported by
+  our files (Björn "Vampire" Kautler)
+
+- Included the Windows launcher in the Java installer (Björn "Vampire" Kautler)
+
+- Made the filter tasks use UTF-8 encoding as all our files are UTF-8 encoded
+  (Björn "Vampire" Kautler)
+
+- Made the Windows installer correctly show special characters like german
+  umlauts (Björn "Vampire" Kautler)
+
+- Fixed various indentation errors (Björn "Vampire" Kautler)
+
+- Removed the Java 5 suggestion in the debian control file
+  (Björn "Vampire" Kautler)
+
+- Replaced the links to Java 5 documentation with links to Java 6 documentation
+  (Björn "Vampire" Kautler)
+
+- Removed the BAT launcher in the Windows installer in favor of the EXE
+  launcher (Björn "Vampire" Kautler)
+
+- Fixed the setting for building the Windows launcher (Björn "Vampire" Kautler)
+
+- Reverted the erroneous changes for Mac OS X plugin (Björn "Vampire" Kautler)
+
+- Fixed the information in README.SRC.txt (Björn "Vampire" Kautler)
+
+- Reworked the Windows installer build file (Björn "Vampire" Kautler)
+
 - Wrap mode tooltip in status bar now indicates the current wrap mode (Matthieu Casanova)
 
 - It is now possible to copy several files in the VFS Browser at the same time,
@@ -299,7 +349,7 @@ contributing to this release.
   name for each view using View -> Set view title. The name is persistent in the
   perspective.xml file.
 
-- In Hypersearchs result panel, the query string length is now limited to 100
+- In Hypersearch result panel, the query string length is now limited to 100
   chars by default for display (Matthieu Casanova)
 
 - Applied patch #2887520: Allow filtering the recent file list using file globs,
@@ -313,7 +363,7 @@ contributing to this release.
   the first and last 10 lines. This is a performance enhancement when loading
   buffers containing very long lines (Matthieu Casanova)
 
-. Added a new option to perform font substitution in the text area when the
+- Added a new option to perform font substitution in the text area when the
   current configured font can't display characters in the buffer. It's disabled
   by default, and can be enabled in the text area option pane, along with the
   option to choose preferred fonts for substitution. This makes reading files
@@ -352,7 +402,9 @@ contributing to this release.
 
 - Ctrl-P and Ctrl-N work from completion popups now (#3080463 - Damien Radtke)
 
-- Added "Replace" button to Search and Replace dialog. This allows a 'replace once' as opposed to 'replace and find'. (#3084224 - Dale Anson)
+- Added "Replace" button to Search and Replace dialog. This allows a 'replace
+  once' as opposed to 'replace and find'. (#3084224 - Dale Anson)
+
 }}}
 
 }}}

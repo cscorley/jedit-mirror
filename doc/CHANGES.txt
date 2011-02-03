@@ -4,17 +4,24 @@ jEdit 4.4 version history
 
 {{{ Version 4.4pre1
 
-Thanks to Björn "Vampire" Kautler, Alan Ezust, Eric Berry, Shlomy
-Reinstein, Damien Radtke, Dale Anson, Matthieu Casanova, Eric Le Lay,
-Bernhard Walle, Joerg Spieler, Kevin Hunter, François Rey, Dion Whitehead,
-Marcelo Vanzin, Jesse Pavel, Bernhard Walle and Jakub Roztočil for
-contributing to this release.
+Thanks to Björn "Vampire" Kautler, Alan Ezust, Eric Berry,
+Shlomy Reinstein, Damien Radtke, Dale Anson, Matthieu Casanova,
+Eric Le Lay, Bernhard Walle, Joerg Spieler, Kevin Hunter, François Rey,
+Dion Whitehead, Marcelo Vanzin, Jesse Pavel, Jakub Roztočil,
+Kazutoshi Satoda, Anshal Shukla, Milutin Jovanović, Vadim Voituk,
+goebbe, James Nicholl, Uwe donovaly, Sergey Mezentsev, Jim Lawton,
+Suraj Kurapati, Paulo Moura, curtis_call, Rowan Collins,
+Stephen Blackheath, asitdepends, Michael Schlotter, Robin Neatherway,
+strank, and Hisateru Tanaka for contributing to this release.
 
 {{{ Bug fixes
 
 - Fixed an exception when trying to add new menu items to the context menu
   if some ActionSets have been unloaded (plugin deactivation)
   (Matthieu Casanova #3071355)
+
+- Windows installer tries to quit existing jEdit instance before trying to
+  install (Björn "Vampire" Kautler)
 
 - Closes menus when toggling dockables. (#3022084 - Anshal Shukla)
 
@@ -111,7 +118,7 @@ contributing to this release.
 
 - CopyFileWorker now throws a FileNotFoundException instead of a NPE if
   the target path is not a directory and it's parent doesn't exists.
-   (Matthieu Casanova)
+  (Matthieu Casanova)
 
 - CopyFileWorker do not accept that the source and target are the same
   (Matthieu Casanova)
@@ -126,8 +133,17 @@ contributing to this release.
 
 - Show search bar in full screen mode. (Sf.net bug #2944752 - Shlomy Reinstein)
 
+- Got rid of extra Component created as parent of every JToolBar in
+  GuiUtilities.loadToolBar() (#2114751 - Alan Ezust)
+
+- After using save-as action on a read-only buffer the new buffer is no longer
+  read-only (#3148102 - Matthieu Casanova)
+
 }}}
 {{{ API changes
+
+- API made public:
+  org.gjt.sp.jedit.browser.VFSFileNameField (Marcelo Vanzin)
 
 - Added methods to manage the cursor if the TextArea :
   In the TextAreaPainter class, added
@@ -289,46 +305,22 @@ contributing to this release.
 }}}
 {{{ Miscellaneous
 
-- Fixed the build.xml which was for the Windows installer only working if
-  completely run on Windows, making "ant dist-win" on another system and then
-  using "ant dist-win-finish" was broken (Björn "Vampire" Kautler)
-
-- Made the Windows launcher buildable on any system (Björn "Vampire" Kautler)
-
-- Made the Windows installer buildable completely via wine on on non-Windows
+- Made the Windows installer buildable completely via wine on non-Windows
   systems (Björn "Vampire" Kautler)
 
-- Made our documentation build on FOP 0.93+, 0.20.5 is no longer supported by
-  our files (Björn "Vampire" Kautler)
-
 - Included the Windows launcher in the Java installer (Björn "Vampire" Kautler)
-
-- Made the filter tasks use UTF-8 encoding as all our files are UTF-8 encoded
-  (Björn "Vampire" Kautler)
 
 - Made the Windows installer correctly show special characters like german
   umlauts (Björn "Vampire" Kautler)
 
-- Fixed various indentation errors (Björn "Vampire" Kautler)
-
-- Removed the Java 5 suggestion in the debian control file
+- Made the filter tasks use UTF-8 encoding as all our files are UTF-8 encoded
   (Björn "Vampire" Kautler)
 
-- Replaced the links to Java 5 documentation with links to Java 6 documentation
-  (Björn "Vampire" Kautler)
-
-- Removed the BAT launcher in the Windows installer in favor of the EXE
-  launcher (Björn "Vampire" Kautler)
-
-- Fixed the setting for building the Windows launcher (Björn "Vampire" Kautler)
-
-- Reverted the erroneous changes for Mac OS X plugin (Björn "Vampire" Kautler)
-
-- Fixed the information in README.SRC.txt (Björn "Vampire" Kautler)
-
-- Reworked the Windows installer build file (Björn "Vampire" Kautler)
+- build files and properties cleanup (Björn "Vampire" Kautler)
 
 - Wrap mode tooltip in status bar now indicates the current wrap mode (Matthieu Casanova)
+
+- Made the Deb Ant task compatible to Ant 1.8+ (Björn "Vampire" Kautler)
 
 - It is now possible to copy several files in the VFS Browser at the same time,
   and copy from/to the OS explorer (Matthieu Casanova)
@@ -349,7 +341,7 @@ contributing to this release.
   name for each view using View -> Set view title. The name is persistent in the
   perspective.xml file.
 
-- In Hypersearch result panel, the query string length is now limited to 100
+- In Hypersearch results panel, the query string length is now limited to 100
   chars by default for display (Matthieu Casanova)
 
 - Applied patch #2887520: Allow filtering the recent file list using file globs,
@@ -387,13 +379,10 @@ contributing to this release.
 
 - Added jedit.exe in the Windows installer, so that users can invoke
   jEdit more like a native application.
-  (Feature Request #2661227, Patch #2984552 - Hisateru Tanaka)
+  (Feature Request #2661227, Patch #2984552 - Hisateru Tanaka,
+   and Björn "Vampire" Kautler)
 
 - Added some more encoding detectors as default. (Kazutoshi Satoda)
-
-- Extended the scope of the workaround for a bug in Sun (and Apple) JVM 5
-  to cover IBM JVM because the same problem was reported on it.
-  (SF.net bug #3006686 - Kazutoshi Satoda)
 
 - Added settings to Activity Log to adjust colors and filter by message type.
   (Dale Anson)

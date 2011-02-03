@@ -64,19 +64,26 @@
 		  value="-Xlint:unchecked"/>
 	<property name="config.docbook.catalog.debug"
 		  value="1"/>
-	<tstamp>
-		<format property="current.year"
-			pattern="yyyy"/>
-	</tstamp>
 
 	<!-- Cygwin detection (xsltproc needs special arguments) -->
 	<dirname property="xsltproc.dir"
 		 file="${config.xsltproc.executable}"/>
 	<condition property="xsltproc.cygwin.arg"
-		   value="--path /usr/share/docbook-xsl/html/"
-		   else="">
-		<available file="${xsltproc.dir}/cygcheck.exe"/>
+		   value="--path /usr/share/sgml/docbook/xsl-stylesheets/html/">
+		<and>
+			<available file="${xsltproc.dir}/cygcheck.exe"/>
+			<available file="${xsltproc.dir}/../usr/share/sgml/docbook/xsl-stylesheets/html/docbook.xsl"/>
+		</and>
 	</condition>
+	<condition property="xsltproc.cygwin.arg"
+		   value="--path /usr/share/docbook-xsl/html/">
+		<and>
+			<available file="${xsltproc.dir}/cygcheck.exe"/>
+			<available file="${xsltproc.dir}/../usr/share/docbook-xsl/html/docbook.xsl"/>
+		</and>
+	</condition>
+	<property name="xsltproc.cygwin.arg"
+		  value=""/>
 
 	<target name="init"
 		unless="init.done">
@@ -318,13 +325,13 @@
 	</target>
 
 	<target name="build-exe-launcher"
-		depends="init">
+		depends="init,filter-package-files"
+		description="build the EXE launcher">
 		<fail message="Please set the property &quot;launch4j.dir&quot; in build.properties, you may find example values in build.properties.sample"
 		      unless="config.launch4j.dir"/>
 		<taskdef name="launch4j"
 			 classname="net.sf.launch4j.ant.Launch4jTask"
 			 classpath="${config.launch4j.dir}/launch4j.jar"/>
-		<mkdir dir="${jar.location}"/>
 		<launch4j configFile="${classes.dir}/package-files/windows/jedit.launch4j.xml"
 			  outfile="${jar.location}/jedit.exe"/>
 	</target>
@@ -360,8 +367,6 @@
 		      fork="true"
 		      spawn="true"
 		      maxmemory="192M">
-			<sysproperty key="xml.catalog.verbosity"
-				     value="9"/>
 			<arg value="-settings=${build.dir}/settings"/>
 		</java>
 	</target>
@@ -586,7 +591,7 @@
 			<group title="jEdit"
 			       packages="org.gjt.sp*"/>
 			<group title="BeanShell"
-			       packages="org.gjt.sp.jedit.bsh*" />
+			       packages="org.gjt.sp.jedit.bsh*"/>
 		</javadoc>
 	</target>
 
@@ -659,7 +664,7 @@
 			<arg line="${xsltproc.cygwin.arg}"/>
 			<arg value="--stringparam"/>
 			<arg value="paper.type"/>
-			<arg value="&quot;${paper.type}&quot;"/>
+			<arg value="${paper.type}"/>
 			<arg value="--output"/>
 			<arg value="../${docs-pdf.classes.dir}/${manual.filename.prefix}${manual.filename.paper.type}.fot"/>
 			<arg value="jeditfo.xsl"/>
@@ -672,7 +677,8 @@
 			<classpath>
 				<fileset dir="${config.fop.dir}"
 					 includes="build/fop.jar
-						   lib/*.jar"/>
+						   lib/*.jar
+						   *.jar"/>
 			</classpath>
 		</taskdef>
 		<fop fofile="${docs-pdf.classes.dir}/${manual.filename.prefix}${manual.filename.paper.type}.fot"
@@ -1003,6 +1009,10 @@
 		<taskdef name="jarbundler"
 			 classname="net.sourceforge.jarbundler.JarBundler"
 			 classpath="${dist.dir}/classes/jarbundler"/>
+		<tstamp>
+			<format property="current.year"
+				pattern="yyyy"/>
+		</tstamp>
 		<mkdir dir="${dist.dir}/classes/mac"/>
 		<jarbundler dir="${dist.dir}/classes/mac"
 			    name="jEdit"
@@ -1159,39 +1169,15 @@
 			   else="${dist.dir}">
 			<istrue value="${config.innosetup.via.wine}"/>
 		</condition>
+		<tstamp>
+			<format property="current.year"
+				pattern="yyyy"/>
+		</tstamp>
 		<copy todir="${classes.dir}/package-files"
 		      encoding="UTF-8"
 		      overwrite="true">
 			<fileset dir="package-files"/>
-			<filterset>
-				<filter token="base.dir"
-					value="${basedir}"/>
-				<filter token="base.dir.possibly.for.wine"
-					value="${basedir.possibly.for.wine}"/>
-				<filter token="current.year"
-					value="${current.year}"/>
-				<filter token="dist.dir.possibly.for.wine"
-					value="${dist.dir.possibly.for.wine}"/>
-				<filter token="jar.filename"
-					value="${jar.filename}"/>
-				<filter token="jedit.build.number"
-					value="${jedit.build.number}"/>
-				<filter token="jedit.version"
-					value="${jedit.version}"/>
-				<filter token="slackware.target.java.version"
-					value="${slackware.target.java.version}"/>
-				<filter token="target.java.version"
-					value="${target.java.version}"/>
-				<filter token="win.filename"
-					value="${win.filename}"/>
-			</filterset>
-		</copy>
-		<copy todir="${classes.dir}/package-files/windows"
-		      encoding="UTF-8"
-		      outputencoding="ISO-8859-1"
-		      overwrite="true">
-			<fileset file="package-files/windows/win32installer.iss"/>
-			<filterset>
+			<filterset id="package-files-filter">
 				<filter token="base.dir"
 					value="${basedir}"/>
 				<filter token="base.dir.possibly.for.wine"

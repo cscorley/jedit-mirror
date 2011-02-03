@@ -49,7 +49,7 @@
 # Example Cygwin locations
 #xsltproc.executable=C:\\cygwin\\usr\\bin\\xsltproc.exe
 #docbook.xsl=c:\\cygwin\\usr\\share\\docbook-xsl
-#docbook.catalog=c:\\cygwin\\usr\\share\\xml\\docbook\\4.4\\docbook.cat
+#docbook.catalog=c:\\cygwin\\usr\\share\\xml\\docbook\\4.4\\catalog.xml
 
 # Example Debian and Ubuntu locations
 #xsltproc.executable=xsltproc
@@ -82,6 +82,9 @@
 
 # Example Linux location
 #fop.dir=/opt/fop-1.0
+
+# Example Debian and Ubuntu location
+#fop.dir=/usr/share/java
 
 ### For generating the Windows executable file, make sure to install
 ### Launch4j and set the path to Launch4j install directory here

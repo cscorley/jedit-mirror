@@ -1,11 +1,14 @@
-; Inno Setup installer script for jEdit
+﻿; Inno Setup installer script for jEdit
+; encoding=UTF-8Y
+; (BOM seems the only way to let Inno Setup know the encoding)
+;
 ; Björn "Vampire" Kautler <Vampire@jEdit.org>
 ;
 
 [Setup]
 AllowNoIcons=true
 AppContact=jedit-devel@lists.sourceforge.net
-AppCopyright=Copyright (C) 1998-@current.year@ Contributors
+AppCopyright=Copyright © 1998-@current.year@ Contributors
 AppID=jEdit
 AppName=jEdit
 AppPublisher=Contributors
@@ -32,7 +35,7 @@ TimeStampsInUTC=true
 UninstallDisplayIcon={app}\jedit.exe
 UninstallDisplayName=jEdit @jedit.version@
 VersionInfoCompany=Contributors
-VersionInfoCopyright=Copyright (C) 1998-@current.year@ Contributors
+VersionInfoCopyright=Copyright © 1998-@current.year@ Contributors
 VersionInfoDescription=Programmer's Text Editor
 VersionInfoTextVersion=@jedit.version@
 VersionInfoVersion=@jedit.build.number@
